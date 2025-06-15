@@ -18,6 +18,8 @@ pub fn build(b: *std.Build) void {
 
     b.installArtifact(exe);
 
+    exe.linkLibC();
+
     const run_cmd = b.addRunArtifact(exe);
 
     run_cmd.step.dependOn(b.getInstallStep());
