@@ -10,11 +10,11 @@ pub fn main() !void {
         return;
     }
 
-    const file = try fs.cwd().openFile(args[1], .{});
+    const file: fs.File = try fs.cwd().openFile(args[1], .{});
     defer file.close();
 
-    const file_size = (try file.stat()).size;
-    const contents = try file.reader().readAllAlloc(allocator, file_size);
+    const file_size: u64 = (try file.stat()).size;
+    const contents: []u8 = try file.reader().readAllAlloc(allocator, file_size);
     defer allocator.free(contents);
     for (contents) |byte| {
         std.debug.print("{x}", .{byte});
