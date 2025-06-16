@@ -3,8 +3,9 @@ const fs = std.fs;
 const bmp = @import("bmp.zig");
 
 pub fn main() !void {
-    try get_args();
-    defer free_args();
+    const allocator: std.mem.Allocator = std.heap.c_allocator;
+    const args: [][:0]u8 = try std.process.argsAlloc(allocator);
+    defer std.process.argsFree(allocator, args);
 
     if (args.len != 2) {
         std.debug.print("Expected: {s} input.bmp\n", .{args[0]});
@@ -26,15 +27,4 @@ pub fn main() !void {
         bmp_file.file_header.reserved2,
         bmp_file.file_header.offset
     });
-}
-
-var allocator: std.mem.Allocator = std.heap.c_allocator;
-var args: [][:0]u8 = undefined;
-
-fn get_args() !void {
-    args = try std.process.argsAlloc(allocator);
-}
-
-fn free_args() void {
-    std.process.argsFree(allocator, args);
 }
