@@ -14,7 +14,7 @@ const bitmap_file_header = struct {
 
 pub fn parse(file_contents: []u8) !bmp {
     const file_header_size: u8 = 14;
-    const file_header = try parse_file_header(file_contents[0..file_header_size]);
+    const file_header: bitmap_file_header = try parse_file_header(file_contents[0..file_header_size]);
     return bmp{
         .file_header = file_header
     };
