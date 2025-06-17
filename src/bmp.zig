@@ -31,5 +31,5 @@ fn parse_file_header(file_header_raw: []u8) !bitmap_file_header {
 }
 
 fn translate_hex(slice: []u8) !u32 {
-    return @as(u32, slice[0]) | @as(u32, slice[1]) << 8 | @as(u32, slice[2]) << 16 | @as(u32, slice[3]);
+    return @as(u32, slice[0]) | @as(u32, slice[1]) << 8 | @as(u32, slice[2]) << 16 | @as(u32, slice[3]) << 24;
 }
