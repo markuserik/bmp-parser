@@ -3,7 +3,8 @@ const fs = std.fs;
 const bmp = @import("bmp.zig");
 
 pub fn main() !void {
-    const allocator: std.mem.Allocator = std.heap.c_allocator;
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator: std.mem.Allocator = gpa.allocator();
     const args: [][:0]u8 = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
 
