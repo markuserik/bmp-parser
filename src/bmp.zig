@@ -14,14 +14,32 @@ const bitmap_file_header = struct {
 };
  
 const DIB_header = struct {
+    header_type: DIB_header_type,
     dib_header_size: u32
 };
 
-pub fn parse(file_contents: []u8) !bmp {
+// Only implementing the types recognized by microsoft (core, info, v4, v5), at
+// least for now.
+// Will leave the rest in the enum so that they can be recognized despite not
+// being parsable.
+const DIB_header_type = enum(u32) {
+    BITMAPCOREHEADER = 12,
+    OS22XBITMAPHEADER_16 = 16,
+    BITMAPINFOHEADER = 40,
+    BITMAPV2INFOHEADER = 52,
+    BITMAPV3INFOHEADER = 56,
+    OS22XBITMAPHEADER_64 = 64,
+    BITMAPV4HEADER = 108,
+    BITMAPV5HEADER = 124
+};
+
+pub fn parse(file_contents_raw: []u8) !bmp {
     const file_header_size: u8 = 14;
-    const dib_header_size: u32 = try parse_hex(file_contents[file_header_size..file_header_size+4]);
-    const file_header: bitmap_file_header = try parse_file_header(file_contents[0..file_header_size]);
-    const dib_header: DIB_header = try parse_dib_header(file_contents[file_header_size..dib_header_size-file_header_size], dib_header_size);
+    const file_header: bitmap_file_header = try parse_file_header(file_contents_raw[0..file_header_size]);
+
+    const dib_header_type: DIB_header_type = @enumFromInt(try parse_hex(file_contents_raw[file_header_size..file_header_size+4]));
+    const dib_header: DIB_header = try parse_dib_header(file_contents_raw, dib_header_type, file_header_size);
+
     return bmp{
         .file_header = file_header,
         .dib_header = dib_header
@@ -38,10 +56,31 @@ fn parse_file_header(file_header_raw: []u8) !bitmap_file_header {
     };
 }
 
-fn parse_dib_header(dib_header_raw: []u8, dib_header_size: u32) !DIB_header {
+fn parse_dib_header(file_contents_raw: []u8, dib_header_type: DIB_header_type, file_header_size: u8) !DIB_header {
+    const header_content_raw = file_contents_raw[file_header_size..@intFromEnum(dib_header_type)-file_header_size];
+    switch (dib_header_type) {
+        DIB_header_type.BITMAPCOREHEADER => return parse_BITMAPCOREHEADER(header_content_raw),
+        DIB_header_type.BITMAPV5HEADER => return parse_BITMAPV5HEADER(header_content_raw),
+        else => {
+            std.debug.print("Header type {s} not implemented\n", .{@tagName(dib_header_type)});
+            return error.NotImplemented;
+        }
+    }
+}
+
+fn parse_BITMAPCOREHEADER(dib_header_raw: []u8) !DIB_header {
     _ = dib_header_raw;
     return DIB_header{
-        .dib_header_size = dib_header_size
+        .header_type = DIB_header_type.BITMAPCOREHEADER,
+        .dib_header_size = @intFromEnum(DIB_header_type.BITMAPCOREHEADER)
+    };
+}
+
+fn parse_BITMAPV5HEADER(dib_header_raw: []u8) !DIB_header {
+    _ = dib_header_raw;
+    return DIB_header{
+        .header_type = DIB_header_type.BITMAPV5HEADER,
+        .dib_header_size = @intFromEnum(DIB_header_type.BITMAPV5HEADER)
     };
 }
 
