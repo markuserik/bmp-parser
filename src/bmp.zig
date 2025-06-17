@@ -2,6 +2,7 @@ const std = @import("std");
 
 pub const bmp = struct {
     file_header: bitmap_file_header,
+    dib_header: DIB_header
 };
 
 const bitmap_file_header = struct {
@@ -11,12 +12,19 @@ const bitmap_file_header = struct {
     reserved2: [2]u8,
     offset: u32
 };
+ 
+const DIB_header = struct {
+    dib_header_size: u32
+};
 
 pub fn parse(file_contents: []u8) !bmp {
     const file_header_size: u8 = 14;
+    const dib_header_size: u32 = try parse_hex(file_contents[file_header_size..file_header_size+4]);
     const file_header: bitmap_file_header = try parse_file_header(file_contents[0..file_header_size]);
+    const dib_header: DIB_header = try parse_dib_header(file_contents[file_header_size..dib_header_size-file_header_size], dib_header_size);
     return bmp{
-        .file_header = file_header
+        .file_header = file_header,
+        .dib_header = dib_header
     };
 }
 
@@ -27,6 +35,13 @@ fn parse_file_header(file_header_raw: []u8) !bitmap_file_header {
         .reserved1 = file_header_raw[6..8].*,
         .reserved2 = file_header_raw[8..10].*,
         .offset = try parse_hex(file_header_raw[10..14])
+    };
+}
+
+fn parse_dib_header(dib_header_raw: []u8, dib_header_size: u32) !DIB_header {
+    _ = dib_header_raw;
+    return DIB_header{
+        .dib_header_size = dib_header_size
     };
 }
 

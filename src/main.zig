@@ -21,11 +21,15 @@ pub fn main() !void {
     defer allocator.free(contents);
 
     const bmp_file: bmp.bmp = try bmp.parse(contents);
-    std.debug.print("Identifier: {s}\nFile size: {}\nReserved1: {s}\nReserved2: {s}\nOffset: {}\n", .{
+    std.debug.print("File Header:\nIdentifier: {s}\nFile size: {}\nReserved1: {s}\nReserved2: {s}\nOffset: {}\n\n", .{
         bmp_file.file_header.identifier,
         bmp_file.file_header.file_size,
         bmp_file.file_header.reserved1,
         bmp_file.file_header.reserved2,
         bmp_file.file_header.offset
+    });
+
+    std.debug.print("DIB Header:\nDIB Header Size: {}\n", .{
+        bmp_file.dib_header.dib_header_size
     });
 }
