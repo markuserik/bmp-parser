@@ -37,7 +37,7 @@ pub fn parse(file_contents_raw: []u8) !bmp {
     const file_header_size: u8 = 14;
     const file_header: bitmap_file_header = try parse_file_header(file_contents_raw[0..file_header_size]);
 
-    const dib_header_type: DIB_header_type = @enumFromInt(try parse_hex(file_contents_raw[file_header_size..file_header_size+4]));
+    const dib_header_type: DIB_header_type = @enumFromInt(try parse_raw_u32(file_contents_raw[file_header_size..file_header_size+4]));
     const dib_header: DIB_header = try parse_dib_header(file_contents_raw, dib_header_type, file_header_size);
 
     return bmp{
@@ -49,10 +49,10 @@ pub fn parse(file_contents_raw: []u8) !bmp {
 fn parse_file_header(file_header_raw: []u8) !bitmap_file_header {
     return bitmap_file_header{
         .identifier = file_header_raw[0..2].*,
-        .file_size = try parse_hex(file_header_raw[2..6]),
+        .file_size = try parse_raw_u32(file_header_raw[2..6]),
         .reserved1 = file_header_raw[6..8].*,
         .reserved2 = file_header_raw[8..10].*,
-        .offset = try parse_hex(file_header_raw[10..14])
+        .offset = try parse_raw_u32(file_header_raw[10..14])
     };
 }
 
@@ -63,7 +63,7 @@ fn parse_dib_header(file_contents_raw: []u8, dib_header_type: DIB_header_type, f
         DIB_header_type.BITMAPV5HEADER => return parse_BITMAPV5HEADER(header_content_raw),
         else => {
             std.debug.print("Header type {s} not implemented\n", .{@tagName(dib_header_type)});
-            return error.NotImplemented;
+            return error.DIBHeaderTypeNotImplemented;
         }
     }
 }
@@ -84,6 +84,6 @@ fn parse_BITMAPV5HEADER(dib_header_raw: []u8) !DIB_header {
     };
 }
 
-fn parse_hex(slice: []u8) !u32 {
+fn parse_raw_u32(slice: []u8) !u32 {
     return @as(u32, slice[0]) | @as(u32, slice[1]) << 8 | @as(u32, slice[2]) << 16 | @as(u32, slice[3]) << 24;
 }
