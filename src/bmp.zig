@@ -12,9 +12,36 @@ const bitmap_file_header = struct {
     reserved2: [2]u8,
     offset: u32
 };
+
+pub const DIB_header = union(DIB_header_type) {
+    BITMAPCOREHEADER: DIB_header_BITMAPCOREHEADER,
+    OS22XBITMAPHEADER_16: DIB_header_OS22XBITMAPHEADER_16,
+    BITMAPINFOHEADER: DIB_header_BITMAPINFOHEADER,
+    BITMAPV2INFOHEADER: DIB_header_BITMAPV2INFOHEADER,
+    BITMAPV3INFOHEADER: DIB_header_BITMAPV3INFOHEADER,
+    OS22XBITMAPHEADER_64: DIB_header_OS22XBITMAPHEADER_64,
+    BITMAPV4HEADER: DIB_header_BITMAPV4HEADER,
+    BITMAPV5HEADER: DIB_header_BITMAPV5HEADER
+};
  
-const DIB_header = struct {
-    header_type: DIB_header_type,
+const DIB_header_BITMAPCOREHEADER = struct {
+    dib_header_size: u32
+};
+const DIB_header_OS22XBITMAPHEADER_16 = struct {
+};
+const DIB_header_BITMAPINFOHEADER = struct {
+    dib_header_size: u32
+};
+const DIB_header_BITMAPV2INFOHEADER = struct {
+};
+const DIB_header_BITMAPV3INFOHEADER = struct {
+};
+const DIB_header_OS22XBITMAPHEADER_64 = struct {
+};
+const DIB_header_BITMAPV4HEADER = struct {
+    dib_header_size: u32
+};
+const DIB_header_BITMAPV5HEADER = struct {
     dib_header_size: u32
 };
 
@@ -70,18 +97,18 @@ fn parse_dib_header(file_contents_raw: []u8, dib_header_type: DIB_header_type, f
 
 fn parse_BITMAPCOREHEADER(dib_header_raw: []u8) !DIB_header {
     _ = dib_header_raw;
-    return DIB_header{
-        .header_type = DIB_header_type.BITMAPCOREHEADER,
+    return DIB_header{ .BITMAPCOREHEADER = DIB_header_BITMAPCOREHEADER{
+        //.header_type = DIB_header_type.BITMAPCOREHEADER,
         .dib_header_size = @intFromEnum(DIB_header_type.BITMAPCOREHEADER)
-    };
+    }};
 }
 
 fn parse_BITMAPV5HEADER(dib_header_raw: []u8) !DIB_header {
     _ = dib_header_raw;
-    return DIB_header{
-        .header_type = DIB_header_type.BITMAPV5HEADER,
+    return DIB_header{ .BITMAPV5HEADER = DIB_header_BITMAPV5HEADER{
+        //.header_type = DIB_header_type.BITMAPV5HEADER,
         .dib_header_size = @intFromEnum(DIB_header_type.BITMAPV5HEADER)
-    };
+    }};
 }
 
 fn parse_raw_u32(slice: []u8) !u32 {

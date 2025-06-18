@@ -28,8 +28,14 @@ pub fn main() !void {
         bmp_file.file_header.reserved2,
         bmp_file.file_header.offset
     });
+    
+    var dib_header_size: u32 = 0;
+    switch (bmp_file.dib_header) {
+        bmp.DIB_header.BITMAPV5HEADER => |*v5header| { dib_header_size = v5header.*.dib_header_size; },
+        else => {}
+    }
 
     std.debug.print("DIB Header:\nDIB Header Size: {}\n", .{
-        bmp_file.dib_header.dib_header_size
+        dib_header_size
     });
 }
