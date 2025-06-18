@@ -57,7 +57,7 @@ fn parse_file_header(file_header_raw: []u8) !bitmap_file_header {
 }
 
 fn parse_dib_header(file_contents_raw: []u8, dib_header_type: DIB_header_type, file_header_size: u8) !DIB_header {
-    const header_content_raw = file_contents_raw[file_header_size..@intFromEnum(dib_header_type)-file_header_size];
+    const header_content_raw = file_contents_raw[file_header_size..@intFromEnum(dib_header_type)+file_header_size];
     switch (dib_header_type) {
         DIB_header_type.BITMAPCOREHEADER => return parse_BITMAPCOREHEADER(header_content_raw),
         DIB_header_type.BITMAPV5HEADER => return parse_BITMAPV5HEADER(header_content_raw),
