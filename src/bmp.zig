@@ -42,7 +42,11 @@ const DIB_header_BITMAPV4HEADER = struct {
     dib_header_size: u32
 };
 const DIB_header_BITMAPV5HEADER = struct {
-    dib_header_size: u32
+    dib_header_size: u32,
+    width: u32,
+    height: u32,
+    planes: u16,
+    bit_count: u16
 };
 
 // Only implementing the types recognized by microsoft (core, info, v4, v5), at
@@ -98,19 +102,24 @@ fn parse_dib_header(file_contents_raw: []u8, dib_header_type: DIB_header_type, f
 fn parse_BITMAPCOREHEADER(dib_header_raw: []u8) !DIB_header {
     _ = dib_header_raw;
     return DIB_header{ .BITMAPCOREHEADER = DIB_header_BITMAPCOREHEADER{
-        //.header_type = DIB_header_type.BITMAPCOREHEADER,
         .dib_header_size = @intFromEnum(DIB_header_type.BITMAPCOREHEADER)
     }};
 }
 
 fn parse_BITMAPV5HEADER(dib_header_raw: []u8) !DIB_header {
-    _ = dib_header_raw;
     return DIB_header{ .BITMAPV5HEADER = DIB_header_BITMAPV5HEADER{
-        //.header_type = DIB_header_type.BITMAPV5HEADER,
-        .dib_header_size = @intFromEnum(DIB_header_type.BITMAPV5HEADER)
+        .dib_header_size = @intFromEnum(DIB_header_type.BITMAPV5HEADER),
+        .width = try parse_raw_u32(dib_header_raw[4..8]),
+        .height = try parse_raw_u32(dib_header_raw[8..12]),
+        .planes = try parse_raw_u16(dib_header_raw[12..14]),
+        .bit_count = try parse_raw_u16(dib_header_raw[14..16])
     }};
 }
 
 fn parse_raw_u32(slice: []u8) !u32 {
     return @as(u32, slice[0]) | @as(u32, slice[1]) << 8 | @as(u32, slice[2]) << 16 | @as(u32, slice[3]) << 24;
+}
+
+fn parse_raw_u16(slice: []u8) !u16 {
+    return @as(u16, slice[0]) | @as(u16, slice[1]) << 8;
 }

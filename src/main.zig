@@ -30,12 +30,27 @@ pub fn main() !void {
     });
     
     var dib_header_size: u32 = 0;
+    var width: u32 = 0;
+    var height: u32 = 0;
+    var planes: u16 = 0;
+    var bit_count: u16 = 0;
     switch (bmp_file.dib_header) {
-        bmp.DIB_header.BITMAPV5HEADER => |*v5header| { dib_header_size = v5header.*.dib_header_size; },
+        bmp.DIB_header.BITMAPCOREHEADER => |*header| { dib_header_size = header.*.dib_header_size; },
+        bmp.DIB_header.BITMAPV5HEADER => |*header| {
+            dib_header_size = header.*.dib_header_size; 
+            width = header.*.width;
+            height = header.*.height;
+            planes = header.*.planes;
+            bit_count = header.*.bit_count;
+        },
         else => {}
     }
 
-    std.debug.print("DIB Header:\nDIB Header Size: {}\n", .{
-        dib_header_size
+    std.debug.print("DIB Header:\nDIB Header Size: {}\nWidth: {}\nHeight: {}\nPlanes: {}\nBit count: {}\n", .{
+        dib_header_size,
+        width,
+        height,
+        planes,
+        bit_count
     });
 }
