@@ -46,14 +46,15 @@ const DIB_header_BITMAPV5HEADER = struct {
     width: u32,
     height: u32,
     planes: u16,
-    bit_count: u16
+    bit_count: u16,
+    compression_type: DIB_compression_type
 };
 
 // Only implementing the types recognized by microsoft (core, info, v4, v5), at
 // least for now.
 // Will leave the rest in the enum so that they can be recognized despite not
 // being parsable.
-const DIB_header_type = enum(u32) {
+pub const DIB_header_type = enum(u32) {
     BITMAPCOREHEADER = 12,
     OS22XBITMAPHEADER_16 = 16,
     BITMAPINFOHEADER = 40,
@@ -62,6 +63,19 @@ const DIB_header_type = enum(u32) {
     OS22XBITMAPHEADER_64 = 64,
     BITMAPV4HEADER = 108,
     BITMAPV5HEADER = 124
+};
+
+pub const DIB_compression_type = enum(u16) {
+    BI_RGB = 0,
+    BI_RLE8 = 1,
+    BI_RLE4 = 2,
+    BI_BITFIELDS = 3,
+    BI_JPEG = 4,
+    BI_PNG = 5,
+    BI_ALPHABITFIELDS = 6,
+    BI_CMYK = 11,
+    BI_CMYKRLE8 = 12,
+    BI_CMYKRLE4 = 13
 };
 
 pub fn parse(file_contents_raw: []u8) !bmp {
@@ -112,7 +126,8 @@ fn parse_BITMAPV5HEADER(dib_header_raw: []u8) !DIB_header {
         .width = try parse_raw_u32(dib_header_raw[4..8]),
         .height = try parse_raw_u32(dib_header_raw[8..12]),
         .planes = try parse_raw_u16(dib_header_raw[12..14]),
-        .bit_count = try parse_raw_u16(dib_header_raw[14..16])
+        .bit_count = try parse_raw_u16(dib_header_raw[14..16]),
+        .compression_type = @enumFromInt(try parse_raw_u16(dib_header_raw[16..18]))
     }};
 }
 
