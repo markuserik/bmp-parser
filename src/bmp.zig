@@ -62,7 +62,10 @@ const DIB_header_BITMAPV5HEADER = struct {
     gamma_red: u32,
     gamma_green: u32,
     gamma_blue: u32,
-    intent: rendering_intent
+    intent: rendering_intent,
+    profile_data: u32,
+    profile_size: u32,
+    reserved: u32
 };
 
 // Only implementing the types recognized by microsoft (core, info, v4, v5), at
@@ -200,7 +203,10 @@ fn parse_BITMAPV5HEADER(dib_header_raw: []u8) !DIB_header {
         .gamma_red = try parse_raw_u32(dib_header_raw[96..100]),
         .gamma_green = try parse_raw_u32(dib_header_raw[100..104]),
         .gamma_blue = try parse_raw_u32(dib_header_raw[104..108]),
-        .intent = @enumFromInt(try parse_raw_u32(dib_header_raw[108..112]))
+        .intent = @enumFromInt(try parse_raw_u32(dib_header_raw[108..112])),
+        .profile_data = try parse_raw_u32(dib_header_raw[112..116]),
+        .profile_size = try parse_raw_u32(dib_header_raw[116..120]),
+        .reserved = try parse_raw_u32(dib_header_raw[120..124])
     }};
 }
 

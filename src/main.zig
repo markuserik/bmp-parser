@@ -33,7 +33,7 @@ pub fn main() !void {
     switch (bmp_file.dib_header) {
         bmp.DIB_header.BITMAPCOREHEADER => |*header| { dib_header_size = header.*.dib_header_size; },
         bmp.DIB_header.BITMAPV5HEADER => |*header| {
-            std.debug.print("DIB Header:\nDIB Header Size: {}\nWidth: {}\nHeight: {}\nPlanes: {}\nBit count: {}\nCompression type: {s}\nSize image: {}\nXpelspermeter: {}\nYpelspermeter: {}\nClrused: {}\nClrimportant: {}\nRed mask: {X}\nGreen mask: {X}\nBlue mask:{X}\nAlpha mask: {X}\nCS Type: {s}\nciexyz red: x: {} y: {} z: {}\nciexyz green: x: {} y: {} z: {}\nciexyz blue: x: {} y: {} z: {}\nGamma red: {}\nGamma green: {}\nGamma blue: {}\nIntent: {s}\n", .{
+            std.debug.print("DIB Header:\nDIB Header Size: {}\nWidth: {}\nHeight: {}\nPlanes: {}\nBit count: {}\nCompression type: {s}\nSize image: {}\nXpelspermeter: {}\nYpelspermeter: {}\nClrused: {}\nClrimportant: {}\nRed mask: {X}\nGreen mask: {X}\nBlue mask:{X}\nAlpha mask: {X}\nCS Type: {s}\nciexyz red: x: {} y: {} z: {}\nciexyz green: x: {} y: {} z: {}\nciexyz blue: x: {} y: {} z: {}\nGamma red: {}\nGamma green: {}\nGamma blue: {}\nIntent: {s}\nProfile data: {}\nProfile size: {}\nReserved: {}\n", .{
             header.*.dib_header_size,
             header.*.width,
             header.*.height,
@@ -62,7 +62,10 @@ pub fn main() !void {
             header.*.gamma_red,
             header.*.gamma_green,
             header.*.gamma_blue,
-            @tagName(header.*.intent)
+            @tagName(header.*.intent),
+            header.*.profile_data,
+            header.*.profile_size,
+            header.*.reserved
             });
         },
         else => {}
