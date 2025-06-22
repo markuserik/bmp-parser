@@ -50,7 +50,9 @@ const DIB_header_BITMAPV5HEADER = struct {
     compression_type: DIB_compression_type,
     size_image: u32,
     xpelspermeter: u32,
-    ypelspermeter: u32
+    ypelspermeter: u32,
+    clrused: u32,
+    clrimportant: u32
 };
 
 // Only implementing the types recognized by microsoft (core, info, v4, v5), at
@@ -133,7 +135,9 @@ fn parse_BITMAPV5HEADER(dib_header_raw: []u8) !DIB_header {
         .compression_type = @enumFromInt(try parse_raw_u32(dib_header_raw[16..20])),
         .size_image = try parse_raw_u32(dib_header_raw[20..24]),
         .xpelspermeter = try parse_raw_u32(dib_header_raw[24..28]),
-        .ypelspermeter = try parse_raw_u32(dib_header_raw[28..32])
+        .ypelspermeter = try parse_raw_u32(dib_header_raw[28..32]),
+        .clrused = try parse_raw_u32(dib_header_raw[32..36]),
+        .clrimportant = try parse_raw_u32(dib_header_raw[36..40])
     }};
 }
 
