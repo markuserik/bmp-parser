@@ -56,7 +56,8 @@ const DIB_header_BITMAPV5HEADER = struct {
     redmask: u32,
     greenmask: u32,
     bluemask: u32,
-    alphamask: u32
+    alphamask: u32,
+    cs_type: CS_type
 };
 
 // Only implementing the types recognized by microsoft (core, info, v4, v5), at
@@ -85,6 +86,14 @@ pub const DIB_compression_type = enum(u32) {
     BI_CMYK = 11,
     BI_CMYKRLE8 = 12,
     BI_CMYKRLE4 = 13
+};
+
+pub const CS_type = enum(u32) {
+    LCS_CALIBRATED_RGB = 0x00000000,
+    LCS_sRGB = 0x73524742,
+    LCS_WINDOWS_COLOR_SPACE = 0x57696E20,
+    PROFILE_LINKED = 0x4C494E4B,
+    PROFILE_EMBEDDED = 0x4D424544
 };
 
 pub fn parse(file_contents_raw: []u8) !bmp {
@@ -145,7 +154,8 @@ fn parse_BITMAPV5HEADER(dib_header_raw: []u8) !DIB_header {
         .redmask = try parse_raw_u32(dib_header_raw[40..44]),
         .greenmask = try parse_raw_u32(dib_header_raw[44..48]),
         .bluemask = try parse_raw_u32(dib_header_raw[48..52]),
-        .alphamask = try parse_raw_u32(dib_header_raw[52..56])
+        .alphamask = try parse_raw_u32(dib_header_raw[52..56]),
+        .cs_type = @enumFromInt(try parse_raw_u32(dib_header_raw[56..60]))
     }};
 }
 

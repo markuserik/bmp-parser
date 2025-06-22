@@ -33,7 +33,7 @@ pub fn main() !void {
     switch (bmp_file.dib_header) {
         bmp.DIB_header.BITMAPCOREHEADER => |*header| { dib_header_size = header.*.dib_header_size; },
         bmp.DIB_header.BITMAPV5HEADER => |*header| {
-            std.debug.print("DIB Header:\nDIB Header Size: {}\nWidth: {}\nHeight: {}\nPlanes: {}\nBit count: {}\nCompression type: {s}\nSize image: {}\nXpelspermeter: {}\nYpelspermeter: {}\nClrused: {}\nClrimportant: {}\nRed mask: {X}\nGreen mask: {X}\nBlue mask:{X}\nAlpha mask: {X}\n", .{
+            std.debug.print("DIB Header:\nDIB Header Size: {}\nWidth: {}\nHeight: {}\nPlanes: {}\nBit count: {}\nCompression type: {s}\nSize image: {}\nXpelspermeter: {}\nYpelspermeter: {}\nClrused: {}\nClrimportant: {}\nRed mask: {X}\nGreen mask: {X}\nBlue mask:{X}\nAlpha mask: {X}\nCS Type: {s}\n", .{
             header.*.dib_header_size,
             header.*.width,
             header.*.height,
@@ -48,7 +48,8 @@ pub fn main() !void {
             header.*.redmask,
             header.*.greenmask,
             header.*.bluemask,
-            header.*.alphamask
+            header.*.alphamask,
+            @tagName(header.*.cs_type)
             });
         },
         else => {}
