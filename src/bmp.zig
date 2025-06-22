@@ -52,7 +52,11 @@ const DIB_header_BITMAPV5HEADER = struct {
     xpelspermeter: u32,
     ypelspermeter: u32,
     clrused: u32,
-    clrimportant: u32
+    clrimportant: u32,
+    redmask: u32,
+    greenmask: u32,
+    bluemask: u32,
+    alphamask: u32
 };
 
 // Only implementing the types recognized by microsoft (core, info, v4, v5), at
@@ -137,16 +141,20 @@ fn parse_BITMAPV5HEADER(dib_header_raw: []u8) !DIB_header {
         .xpelspermeter = try parse_raw_u32(dib_header_raw[24..28]),
         .ypelspermeter = try parse_raw_u32(dib_header_raw[28..32]),
         .clrused = try parse_raw_u32(dib_header_raw[32..36]),
-        .clrimportant = try parse_raw_u32(dib_header_raw[36..40])
+        .clrimportant = try parse_raw_u32(dib_header_raw[36..40]),
+        .redmask = try parse_raw_u32(dib_header_raw[40..44]),
+        .greenmask = try parse_raw_u32(dib_header_raw[44..48]),
+        .bluemask = try parse_raw_u32(dib_header_raw[48..52]),
+        .alphamask = try parse_raw_u32(dib_header_raw[52..56])
     }};
 }
 
 fn parse_raw_u32(slice: []u8) !u32 {
-    if (slice.len != 4) return error.IncorrectByteLen;
+    if (slice.len != 4) return error.IncorrectByteCount;
     return @as(u32, slice[0]) | @as(u32, slice[1]) << 8 | @as(u32, slice[2]) << 16 | @as(u32, slice[3]) << 24;
 }
 
 fn parse_raw_u16(slice: []u8) !u16 {
-    if (slice.len != 2) return error.IncorrectByteLen;
+    if (slice.len != 2) return error.IncorrectByteCount;
     return @as(u16, slice[0]) | @as(u16, slice[1]) << 8;
 }
