@@ -33,14 +33,16 @@ pub fn main() !void {
     switch (bmp_file.dib_header) {
         bmp.DIB_header.BITMAPCOREHEADER => |*header| { dib_header_size = header.*.dib_header_size; },
         bmp.DIB_header.BITMAPV5HEADER => |*header| {
-            std.debug.print("DIB Header:\nDIB Header Size: {}\nWidth: {}\nHeight: {}\nPlanes: {}\nBit count: {}\nCompression type: {s}\nSize image: {}\n", .{
+            std.debug.print("DIB Header:\nDIB Header Size: {}\nWidth: {}\nHeight: {}\nPlanes: {}\nBit count: {}\nCompression type: {s}\nSize image: {}\nXpelspermeter: {}\nYpelspermeter: {}\n", .{
             header.*.dib_header_size,
             header.*.width,
             header.*.height,
             header.*.planes,
             header.*.bit_count,
             @tagName(header.*.compression_type),
-            header.*.size_image
+            header.*.size_image,
+            header.*.xpelspermeter,
+            header.*.ypelspermeter
             });
         },
         else => {}
