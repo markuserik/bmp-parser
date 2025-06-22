@@ -47,7 +47,8 @@ const DIB_header_BITMAPV5HEADER = struct {
     height: u32,
     planes: u16,
     bit_count: u16,
-    compression_type: DIB_compression_type
+    compression_type: DIB_compression_type,
+    size_image: u16
 };
 
 // Only implementing the types recognized by microsoft (core, info, v4, v5), at
@@ -127,14 +128,17 @@ fn parse_BITMAPV5HEADER(dib_header_raw: []u8) !DIB_header {
         .height = try parse_raw_u32(dib_header_raw[8..12]),
         .planes = try parse_raw_u16(dib_header_raw[12..14]),
         .bit_count = try parse_raw_u16(dib_header_raw[14..16]),
-        .compression_type = @enumFromInt(try parse_raw_u16(dib_header_raw[16..18]))
+        .compression_type = @enumFromInt(try parse_raw_u16(dib_header_raw[16..18])),
+        .size_image = try parse_raw_u16(dib_header_raw[18..20])
     }};
 }
 
 fn parse_raw_u32(slice: []u8) !u32 {
+    if (slice.len != 4) return error.IncorrectByteLen;
     return @as(u32, slice[0]) | @as(u32, slice[1]) << 8 | @as(u32, slice[2]) << 16 | @as(u32, slice[3]) << 24;
 }
 
 fn parse_raw_u16(slice: []u8) !u16 {
+    if (slice.len != 2) return error.IncorrectByteLen;
     return @as(u16, slice[0]) | @as(u16, slice[1]) << 8;
 }
