@@ -61,7 +61,8 @@ const DIB_header_BITMAPV5HEADER = struct {
     endpoints: ciexyztriple,
     gamma_red: u32,
     gamma_green: u32,
-    gamma_blue: u32
+    gamma_blue: u32,
+    intent: rendering_intent
 };
 
 // Only implementing the types recognized by microsoft (core, info, v4, v5), at
@@ -110,6 +111,13 @@ pub const ciexyz = struct {
     x: u32,
     y: u32,
     z: u32
+};
+
+pub const rendering_intent = enum(u32) {
+    LCS_GM_ABSOLUTECOLORIMETRIC = 8,
+    LCS_GM_BUSINESS = 1,
+    LCS_GM_GRAPHICS = 2,
+    LCS_GM_IMAGES = 4
 };
 
 pub fn parse(file_contents_raw: []u8) !bmp {
@@ -191,7 +199,8 @@ fn parse_BITMAPV5HEADER(dib_header_raw: []u8) !DIB_header {
         },
         .gamma_red = try parse_raw_u32(dib_header_raw[96..100]),
         .gamma_green = try parse_raw_u32(dib_header_raw[100..104]),
-        .gamma_blue = try parse_raw_u32(dib_header_raw[104..108])
+        .gamma_blue = try parse_raw_u32(dib_header_raw[104..108]),
+        .intent = @enumFromInt(try parse_raw_u32(dib_header_raw[108..112]))
     }};
 }
 
