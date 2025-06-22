@@ -57,7 +57,8 @@ const DIB_header_BITMAPV5HEADER = struct {
     greenmask: u32,
     bluemask: u32,
     alphamask: u32,
-    cs_type: CS_type
+    cs_type: CS_type,
+    endpoints: ciexyztriple
 };
 
 // Only implementing the types recognized by microsoft (core, info, v4, v5), at
@@ -94,6 +95,18 @@ pub const CS_type = enum(u32) {
     LCS_WINDOWS_COLOR_SPACE = 0x57696E20,
     PROFILE_LINKED = 0x4C494E4B,
     PROFILE_EMBEDDED = 0x4D424544
+};
+
+pub const ciexyztriple = struct {
+    red: ciexyz,
+    green: ciexyz,
+    blue: ciexyz
+};
+
+pub const ciexyz = struct {
+    x: u32,
+    y: u32,
+    z: u32
 };
 
 pub fn parse(file_contents_raw: []u8) !bmp {
@@ -155,7 +168,24 @@ fn parse_BITMAPV5HEADER(dib_header_raw: []u8) !DIB_header {
         .greenmask = try parse_raw_u32(dib_header_raw[44..48]),
         .bluemask = try parse_raw_u32(dib_header_raw[48..52]),
         .alphamask = try parse_raw_u32(dib_header_raw[52..56]),
-        .cs_type = @enumFromInt(try parse_raw_u32(dib_header_raw[56..60]))
+        .cs_type = @enumFromInt(try parse_raw_u32(dib_header_raw[56..60])),
+        .endpoints = .{
+            .red = .{
+                .x = try parse_raw_u32(dib_header_raw[60..64]),
+                .y = try parse_raw_u32(dib_header_raw[64..68]),
+                .z = try parse_raw_u32(dib_header_raw[68..72])
+            },
+            .green = .{
+                .x = try parse_raw_u32(dib_header_raw[72..76]),
+                .y = try parse_raw_u32(dib_header_raw[76..80]),
+                .z = try parse_raw_u32(dib_header_raw[80..84])
+            },
+            .blue = .{
+                .x = try parse_raw_u32(dib_header_raw[84..88]),
+                .y = try parse_raw_u32(dib_header_raw[88..92]),
+                .z = try parse_raw_u32(dib_header_raw[92..96])
+            }
+        }
     }};
 }
 
