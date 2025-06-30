@@ -1,4 +1,5 @@
 const std = @import("std");
+const fs = std.fs;
 
 pub const bmp = struct {
     file_header: bitmap_file_header,
@@ -123,7 +124,14 @@ pub const rendering_intent = enum(u32) {
     LCS_GM_IMAGES = 4
 };
 
-pub fn parse(file_contents_raw: []u8) !bmp {
+pub fn parse(file_path: []u8, allocator: std.mem.Allocator) !bmp {
+    const file: fs.File = try fs.cwd().openFile(file_path, .{});
+    defer file.close();
+
+    const file_size: u64 = (try file.stat()).size;
+    const file_contents_raw: []u8 = try file.reader().readAllAlloc(allocator, file_size);
+    defer allocator.free(file_contents_raw);
+
     const file_header_size: u8 = 14;
     const file_header: bitmap_file_header = try parse_file_header(file_contents_raw[0..file_header_size]);
 

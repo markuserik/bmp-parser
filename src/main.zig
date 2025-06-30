@@ -1,5 +1,4 @@
 const std = @import("std");
-const fs = std.fs;
 const bmp = @import("bmp.zig");
 
 pub fn main() !void {
@@ -13,14 +12,7 @@ pub fn main() !void {
         return;
     }
 
-    const file: fs.File = try fs.cwd().openFile(args[1], .{});
-    defer file.close();
-
-    const file_size: u64 = (try file.stat()).size;
-    const contents: []u8 = try file.reader().readAllAlloc(allocator, file_size);
-    defer allocator.free(contents);
-
-    const bmp_file: bmp.bmp = try bmp.parse(contents);
+    const bmp_file: bmp.bmp = try bmp.parse(args[1], allocator);
     std.debug.print("File Header:\nIdentifier: {s}\nFile size: {}\nReserved1: {s}\nReserved2: {s}\nOffset: {}\n\n", .{
         bmp_file.file_header.identifier,
         bmp_file.file_header.file_size,
@@ -33,7 +25,7 @@ pub fn main() !void {
     switch (bmp_file.dib_header) {
         bmp.DIB_header.BITMAPCOREHEADER => |*header| { dib_header_size = header.*.dib_header_size; },
         bmp.DIB_header.BITMAPV5HEADER => |*header| {
-            std.debug.print("DIB Header:\nDIB Header Size: {}\nWidth: {}\nHeight: {}\nPlanes: {}\nBit count: {}\nCompression type: {s}\nSize image: {}\nXpelspermeter: {}\nYpelspermeter: {}\nClrused: {}\nClrimportant: {}\nRed mask: {X}\nGreen mask: {X}\nBlue mask:{X}\nAlpha mask: {X}\nCS Type: {s}\nciexyz red: x: {} y: {} z: {}\nciexyz green: x: {} y: {} z: {}\nciexyz blue: x: {} y: {} z: {}\nGamma red: {}\nGamma green: {}\nGamma blue: {}\nIntent: {s}\nProfile data: {}\nProfile size: {}\nReserved: {}\n", .{
+            std.debug.print("DIB Header:\nDIB Header Type: BITMAPV5HEADER\nDIB Header Size: {}\nWidth: {}\nHeight: {}\nPlanes: {}\nBit count: {}\nCompression type: {s}\nSize image: {}\nXpelspermeter: {}\nYpelspermeter: {}\nClrused: {}\nClrimportant: {}\nRed mask: {X}\nGreen mask: {X}\nBlue mask:{X}\nAlpha mask: {X}\nCS Type: {s}\nciexyz red: x: {} y: {} z: {}\nciexyz green: x: {} y: {} z: {}\nciexyz blue: x: {} y: {} z: {}\nGamma red: {}\nGamma green: {}\nGamma blue: {}\nIntent: {s}\nProfile data: {}\nProfile size: {}\nReserved: {}\n", .{
             header.*.dib_header_size,
             header.*.width,
             header.*.height,
