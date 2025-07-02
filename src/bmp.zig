@@ -54,7 +54,26 @@ const DIB_header_BITMAPV3INFOHEADER = struct {
 const DIB_header_OS22XBITMAPHEADER_64 = struct {
 };
 const DIB_header_BITMAPV4HEADER = struct {
-    dib_header_size: u32
+    dib_header_size: u32,
+    width: u32,
+    height: u32,
+    planes: u16,
+    bit_count: u16,
+    compression_type: DIB_compression_type,
+    size_image: u32,
+    xpelspermeter: u32,
+    ypelspermeter: u32,
+    clrused: u32,
+    clrimportant: u32,
+    redmask: u32,
+    greenmask: u32,
+    bluemask: u32,
+    alphamask: u32,
+    cs_type: CS_type,
+    endpoints: ciexyztriple,
+    gamma_red: u32,
+    gamma_green: u32,
+    gamma_blue: u32
 };
 const DIB_header_BITMAPV5HEADER = struct {
     dib_header_size: u32,
@@ -173,6 +192,7 @@ fn parse_dib_header(file_contents_raw: []u8, dib_header_type: DIB_header_type, f
     switch (dib_header_type) {
         DIB_header_type.BITMAPCOREHEADER => return parse_BITMAPCOREHEADER(header_content_raw),
         DIB_header_type.BITMAPINFOHEADER => return parse_BITMAPINFOHEADER(header_content_raw),
+        DIB_header_type.BITMAPV4HEADER => return parse_BITMAPV4HEADER(header_content_raw),
         DIB_header_type.BITMAPV5HEADER => return parse_BITMAPV5HEADER(header_content_raw),
         else => {
             std.debug.print("Header type {s} not implemented\n", .{@tagName(dib_header_type)});
@@ -204,6 +224,47 @@ fn parse_BITMAPINFOHEADER(dib_header_raw: []u8) !DIB_header {
         .ypelspermeter = try parse_raw_u32(dib_header_raw[28..32]),
         .clrused = try parse_raw_u32(dib_header_raw[32..36]),
         .clrimportant = try parse_raw_u32(dib_header_raw[36..40])
+    }};
+}
+
+fn parse_BITMAPV4HEADER(dib_header_raw: []u8) !DIB_header {
+    return DIB_header{ .BITMAPV4HEADER = DIB_header_BITMAPV4HEADER{
+        .dib_header_size = @intFromEnum(DIB_header_type.BITMAPV4HEADER),
+        .width = try parse_raw_u32(dib_header_raw[4..8]),
+        .height = try parse_raw_u32(dib_header_raw[8..12]),
+        .planes = try parse_raw_u16(dib_header_raw[12..14]),
+        .bit_count = try parse_raw_u16(dib_header_raw[14..16]),
+        .compression_type = @enumFromInt(try parse_raw_u32(dib_header_raw[16..20])),
+        .size_image = try parse_raw_u32(dib_header_raw[20..24]),
+        .xpelspermeter = try parse_raw_u32(dib_header_raw[24..28]),
+        .ypelspermeter = try parse_raw_u32(dib_header_raw[28..32]),
+        .clrused = try parse_raw_u32(dib_header_raw[32..36]),
+        .clrimportant = try parse_raw_u32(dib_header_raw[36..40]),
+        .redmask = try parse_raw_u32(dib_header_raw[40..44]),
+        .greenmask = try parse_raw_u32(dib_header_raw[44..48]),
+        .bluemask = try parse_raw_u32(dib_header_raw[48..52]),
+        .alphamask = try parse_raw_u32(dib_header_raw[52..56]),
+        .cs_type = @enumFromInt(try parse_raw_u32(dib_header_raw[56..60])),
+        .endpoints = .{
+            .red = .{
+                .x = try parse_raw_u32(dib_header_raw[60..64]),
+                .y = try parse_raw_u32(dib_header_raw[64..68]),
+                .z = try parse_raw_u32(dib_header_raw[68..72])
+            },
+            .green = .{
+                .x = try parse_raw_u32(dib_header_raw[72..76]),
+                .y = try parse_raw_u32(dib_header_raw[76..80]),
+                .z = try parse_raw_u32(dib_header_raw[80..84])
+            },
+            .blue = .{
+                .x = try parse_raw_u32(dib_header_raw[84..88]),
+                .y = try parse_raw_u32(dib_header_raw[88..92]),
+                .z = try parse_raw_u32(dib_header_raw[92..96])
+            }
+        },
+        .gamma_red = try parse_raw_u32(dib_header_raw[96..100]),
+        .gamma_green = try parse_raw_u32(dib_header_raw[100..104]),
+        .gamma_blue = try parse_raw_u32(dib_header_raw[104..108])
     }};
 }
 
