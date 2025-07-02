@@ -35,7 +35,17 @@ const DIB_header_BITMAPCOREHEADER = struct {
 const DIB_header_OS22XBITMAPHEADER_16 = struct {
 };
 const DIB_header_BITMAPINFOHEADER = struct {
-    dib_header_size: u32
+    dib_header_size: u32,
+    width: u32,
+    height: u32,
+    planes: u16,
+    bit_count: u16,
+    compression_type: DIB_compression_type,
+    size_image: u32,
+    xpelspermeter: u32,
+    ypelspermeter: u32,
+    clrused: u32,
+    clrimportant: u32
 };
 const DIB_header_BITMAPV2INFOHEADER = struct {
 };
@@ -162,6 +172,7 @@ fn parse_dib_header(file_contents_raw: []u8, dib_header_type: DIB_header_type, f
     const header_content_raw = file_contents_raw[file_header_size..@intFromEnum(dib_header_type)+file_header_size];
     switch (dib_header_type) {
         DIB_header_type.BITMAPCOREHEADER => return parse_BITMAPCOREHEADER(header_content_raw),
+        DIB_header_type.BITMAPINFOHEADER => return parse_BITMAPINFOHEADER(header_content_raw),
         DIB_header_type.BITMAPV5HEADER => return parse_BITMAPV5HEADER(header_content_raw),
         else => {
             std.debug.print("Header type {s} not implemented\n", .{@tagName(dib_header_type)});
@@ -177,6 +188,22 @@ fn parse_BITMAPCOREHEADER(dib_header_raw: []u8) !DIB_header {
         .height = try parse_raw_u16(dib_header_raw[6..8]),
         .planes = try parse_raw_u16(dib_header_raw[8..10]),
         .bit_count = try parse_raw_u16(dib_header_raw[10..12]),
+    }};
+}
+
+fn parse_BITMAPINFOHEADER(dib_header_raw: []u8) !DIB_header {
+    return DIB_header{ .BITMAPINFOHEADER = DIB_header_BITMAPINFOHEADER{
+        .dib_header_size = @intFromEnum(DIB_header_type.BITMAPINFOHEADER),
+        .width = try parse_raw_u32(dib_header_raw[4..8]),
+        .height = try parse_raw_u32(dib_header_raw[8..12]),
+        .planes = try parse_raw_u16(dib_header_raw[12..14]),
+        .bit_count = try parse_raw_u16(dib_header_raw[14..16]),
+        .compression_type = @enumFromInt(try parse_raw_u32(dib_header_raw[16..20])),
+        .size_image = try parse_raw_u32(dib_header_raw[20..24]),
+        .xpelspermeter = try parse_raw_u32(dib_header_raw[24..28]),
+        .ypelspermeter = try parse_raw_u32(dib_header_raw[28..32]),
+        .clrused = try parse_raw_u32(dib_header_raw[32..36]),
+        .clrimportant = try parse_raw_u32(dib_header_raw[36..40])
     }};
 }
 
