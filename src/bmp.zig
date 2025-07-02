@@ -26,7 +26,11 @@ pub const DIB_header = union(DIB_header_type) {
 };
  
 const DIB_header_BITMAPCOREHEADER = struct {
-    dib_header_size: u32
+    dib_header_size: u32,
+    width: u16,
+    height: u16,
+    planes: u16,
+    bit_count: u16
 };
 const DIB_header_OS22XBITMAPHEADER_16 = struct {
 };
@@ -167,9 +171,12 @@ fn parse_dib_header(file_contents_raw: []u8, dib_header_type: DIB_header_type, f
 }
 
 fn parse_BITMAPCOREHEADER(dib_header_raw: []u8) !DIB_header {
-    _ = dib_header_raw;
     return DIB_header{ .BITMAPCOREHEADER = DIB_header_BITMAPCOREHEADER{
-        .dib_header_size = @intFromEnum(DIB_header_type.BITMAPCOREHEADER)
+        .dib_header_size = @intFromEnum(DIB_header_type.BITMAPCOREHEADER),
+        .width = try parse_raw_u16(dib_header_raw[4..6]),
+        .height = try parse_raw_u16(dib_header_raw[6..8]),
+        .planes = try parse_raw_u16(dib_header_raw[8..10]),
+        .bit_count = try parse_raw_u16(dib_header_raw[10..12]),
     }};
 }
 
