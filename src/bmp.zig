@@ -345,14 +345,12 @@ fn parse_extra_bitmasks(reader: *bmp_reader.bmp_reader, alpha: bool) extra_bitma
             .b = parse_raw_u32(reader.read4())
         };
     }
-    else {
-        return extra_bitmasks{
-            .r = parse_raw_u32(reader.read4()),
-            .g = parse_raw_u32(reader.read4()),
-            .b = parse_raw_u32(reader.read4()),
-            .a = parse_raw_u32(reader.read4())
-        };
-    }
+    return extra_bitmasks{
+        .r = parse_raw_u32(reader.read4()),
+        .g = parse_raw_u32(reader.read4()),
+        .b = parse_raw_u32(reader.read4()),
+        .a = parse_raw_u32(reader.read4())
+    };
 }
 
 fn parse_raw_u32(slice: [4]u8) u32 {
