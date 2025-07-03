@@ -175,9 +175,7 @@ pub fn parse(file_path: []u8, allocator: std.mem.Allocator) !bmp {
     defer allocator.free(file_contents_raw);
 
     var reader: *bmp_reader.bmp_reader = try bmp_reader.create_reader(file_contents_raw, allocator);
-    
-    // FIXME: Doesn't work for some reason so it isn't freed
-    //defer allocator.free(reader);
+    defer allocator.destroy(reader);
 
     const file_header: bitmap_file_header = try parse_file_header(reader);
 
