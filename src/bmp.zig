@@ -1,10 +1,11 @@
 const std = @import("std");
 const fs = std.fs;
+const bmp_reader = @import("bmp_reader.zig");
 
 pub const bmp = struct {
     file_header: bitmap_file_header,
     dib_header: DIB_header,
-    extra_bit_masks: ?extra_bitmasks
+    //extra_bit_masks: ?extra_bitmasks
 };
 
 const bitmap_file_header = struct {
@@ -173,47 +174,50 @@ pub fn parse(file_path: []u8, allocator: std.mem.Allocator) !bmp {
     const file_contents_raw: []u8 = try file.reader().readAllAlloc(allocator, file_size);
     defer allocator.free(file_contents_raw);
 
-    const file_header_size: u8 = 14;
-    const file_header: bitmap_file_header = try parse_file_header(file_contents_raw[0..file_header_size]);
+    var reader: *bmp_reader.bmp_reader = try bmp_reader.create_reader(file_contents_raw, allocator);
+    
+    // FIXME: Doesn't work for some reason so it isn't freed
+    //defer allocator.free(reader);
 
-    const dib_header_type: DIB_header_type = @enumFromInt(try parse_raw_u32(file_contents_raw[file_header_size..file_header_size+4]));
-    const dib_header: DIB_header = try parse_dib_header(file_contents_raw, dib_header_type, file_header_size);
+    const file_header: bitmap_file_header = try parse_file_header(reader);
 
-    var extra_bit_masks: ?extra_bitmasks = null;
+    const dib_header_type: DIB_header_type = @enumFromInt(parse_raw_u32(reader.read4()));
+    const dib_header: DIB_header = try parse_dib_header(reader, dib_header_type);
 
-    if (dib_header == DIB_header_type.BITMAPINFOHEADER) {
-        if (dib_header.BITMAPINFOHEADER.compression_type == DIB_compression_type.BI_BITFIELDS) {
-            extra_bit_masks = try parse_extra_bitmasks(file_contents_raw[file_header_size+40..file_header_size+52]);
-        }
-        else if (dib_header.BITMAPINFOHEADER.compression_type == DIB_compression_type.BI_ALPHABITFIELDS) {
-            extra_bit_masks = try parse_extra_bitmasks(file_contents_raw[file_header_size+40..file_header_size+56]);
-        }
-    }
+    //var extra_bit_masks: ?extra_bitmasks = null;
+
+    //if (dib_header == DIB_header_type.BITMAPINFOHEADER) {
+    //    if (dib_header.BITMAPINFOHEADER.compression_type == DIB_compression_type.BI_BITFIELDS) {
+    //        extra_bit_masks = try parse_extra_bitmasks(file_contents_raw[file_header_size+40..file_header_size+52]);
+    //    }
+    //    else if (dib_header.BITMAPINFOHEADER.compression_type == DIB_compression_type.BI_ALPHABITFIELDS) {
+    //        extra_bit_masks = try parse_extra_bitmasks(file_contents_raw[file_header_size+40..file_header_size+56]);
+    //    }
+    //}
 
     return bmp{
         .file_header = file_header,
         .dib_header = dib_header,
-        .extra_bit_masks = extra_bit_masks
+        //.extra_bit_masks = extra_bit_masks
     };
 }
 
-fn parse_file_header(file_header_raw: []u8) !bitmap_file_header {
+fn parse_file_header(reader: *bmp_reader.bmp_reader) !bitmap_file_header {
     return bitmap_file_header{
-        .identifier = file_header_raw[0..2].*,
-        .file_size = try parse_raw_u32(file_header_raw[2..6]),
-        .reserved1 = file_header_raw[6..8].*,
-        .reserved2 = file_header_raw[8..10].*,
-        .offset = try parse_raw_u32(file_header_raw[10..14])
+        .identifier = reader.read2(),
+        .file_size = parse_raw_u32(reader.read4()),
+        .reserved1 = reader.read2(),
+        .reserved2 = reader.read2(),
+        .offset = parse_raw_u32(reader.read4())
     };
 }
 
-fn parse_dib_header(file_contents_raw: []u8, dib_header_type: DIB_header_type, file_header_size: u8) !DIB_header {
-    const header_content_raw = file_contents_raw[file_header_size..@intFromEnum(dib_header_type)+file_header_size];
+fn parse_dib_header(reader: *bmp_reader.bmp_reader, dib_header_type: DIB_header_type) !DIB_header {
     switch (dib_header_type) {
-        DIB_header_type.BITMAPCOREHEADER => return parse_BITMAPCOREHEADER(header_content_raw),
-        DIB_header_type.BITMAPINFOHEADER => return parse_BITMAPINFOHEADER(header_content_raw),
-        DIB_header_type.BITMAPV4HEADER => return parse_BITMAPV4HEADER(header_content_raw),
-        DIB_header_type.BITMAPV5HEADER => return parse_BITMAPV5HEADER(header_content_raw),
+        DIB_header_type.BITMAPCOREHEADER => return parse_BITMAPCOREHEADER(reader),
+        DIB_header_type.BITMAPINFOHEADER => return parse_BITMAPINFOHEADER(reader),
+        DIB_header_type.BITMAPV4HEADER => return parse_BITMAPV4HEADER(reader),
+        DIB_header_type.BITMAPV5HEADER => return parse_BITMAPV5HEADER(reader),
         else => {
             std.debug.print("Header type {s} not implemented\n", .{@tagName(dib_header_type)});
             return error.DIBHeaderTypeNotImplemented;
@@ -221,141 +225,141 @@ fn parse_dib_header(file_contents_raw: []u8, dib_header_type: DIB_header_type, f
     }
 }
 
-fn parse_BITMAPCOREHEADER(dib_header_raw: []u8) !DIB_header {
+fn parse_BITMAPCOREHEADER(reader: *bmp_reader.bmp_reader) !DIB_header {
     return DIB_header{ .BITMAPCOREHEADER = DIB_header_BITMAPCOREHEADER{
         .dib_header_size = @intFromEnum(DIB_header_type.BITMAPCOREHEADER),
-        .width = try parse_raw_u16(dib_header_raw[4..6]),
-        .height = try parse_raw_u16(dib_header_raw[6..8]),
-        .planes = try parse_raw_u16(dib_header_raw[8..10]),
-        .bit_count = try parse_raw_u16(dib_header_raw[10..12]),
+        .width = parse_raw_u16(reader.read2()),
+        .height = parse_raw_u16(reader.read2()),
+        .planes = parse_raw_u16(reader.read2()),
+        .bit_count = parse_raw_u16(reader.read2())
     }};
 }
 
-fn parse_BITMAPINFOHEADER(dib_header_raw: []u8) !DIB_header {
+fn parse_BITMAPINFOHEADER(reader: *bmp_reader.bmp_reader) !DIB_header {
     return DIB_header{ .BITMAPINFOHEADER = DIB_header_BITMAPINFOHEADER{
         .dib_header_size = @intFromEnum(DIB_header_type.BITMAPINFOHEADER),
-        .width = try parse_raw_u32(dib_header_raw[4..8]),
-        .height = try parse_raw_u32(dib_header_raw[8..12]),
-        .planes = try parse_raw_u16(dib_header_raw[12..14]),
-        .bit_count = try parse_raw_u16(dib_header_raw[14..16]),
-        .compression_type = @enumFromInt(try parse_raw_u32(dib_header_raw[16..20])),
-        .size_image = try parse_raw_u32(dib_header_raw[20..24]),
-        .xpelspermeter = try parse_raw_u32(dib_header_raw[24..28]),
-        .ypelspermeter = try parse_raw_u32(dib_header_raw[28..32]),
-        .clrused = try parse_raw_u32(dib_header_raw[32..36]),
-        .clrimportant = try parse_raw_u32(dib_header_raw[36..40])
+        .width = parse_raw_u32(reader.read4()),
+        .height = parse_raw_u32(reader.read4()),
+        .planes = parse_raw_u16(reader.read2()),
+        .bit_count = parse_raw_u16(reader.read2()),
+        .compression_type = @enumFromInt(parse_raw_u32(reader.read4())),
+        .size_image = parse_raw_u32(reader.read4()),
+        .xpelspermeter = parse_raw_u32(reader.read4()),
+        .ypelspermeter = parse_raw_u32(reader.read4()),
+        .clrused = parse_raw_u32(reader.read4()),
+        .clrimportant = parse_raw_u32(reader.read4())
     }};
 }
 
-fn parse_BITMAPV4HEADER(dib_header_raw: []u8) !DIB_header {
+fn parse_BITMAPV4HEADER(reader: *bmp_reader.bmp_reader) !DIB_header {
     return DIB_header{ .BITMAPV4HEADER = DIB_header_BITMAPV4HEADER{
         .dib_header_size = @intFromEnum(DIB_header_type.BITMAPV4HEADER),
-        .width = try parse_raw_u32(dib_header_raw[4..8]),
-        .height = try parse_raw_u32(dib_header_raw[8..12]),
-        .planes = try parse_raw_u16(dib_header_raw[12..14]),
-        .bit_count = try parse_raw_u16(dib_header_raw[14..16]),
-        .compression_type = @enumFromInt(try parse_raw_u32(dib_header_raw[16..20])),
-        .size_image = try parse_raw_u32(dib_header_raw[20..24]),
-        .xpelspermeter = try parse_raw_u32(dib_header_raw[24..28]),
-        .ypelspermeter = try parse_raw_u32(dib_header_raw[28..32]),
-        .clrused = try parse_raw_u32(dib_header_raw[32..36]),
-        .clrimportant = try parse_raw_u32(dib_header_raw[36..40]),
-        .redmask = try parse_raw_u32(dib_header_raw[40..44]),
-        .greenmask = try parse_raw_u32(dib_header_raw[44..48]),
-        .bluemask = try parse_raw_u32(dib_header_raw[48..52]),
-        .alphamask = try parse_raw_u32(dib_header_raw[52..56]),
-        .cs_type = @enumFromInt(try parse_raw_u32(dib_header_raw[56..60])),
+        .width = parse_raw_u32(reader.read4()),
+        .height = parse_raw_u32(reader.read4()),
+        .planes = parse_raw_u16(reader.read2()),
+        .bit_count = parse_raw_u16(reader.read2()),
+        .compression_type = @enumFromInt(parse_raw_u32(reader.read4())),
+        .size_image = parse_raw_u32(reader.read4()),
+        .xpelspermeter = parse_raw_u32(reader.read4()),
+        .ypelspermeter = parse_raw_u32(reader.read4()),
+        .clrused = parse_raw_u32(reader.read4()),
+        .clrimportant = parse_raw_u32(reader.read4()),
+        .redmask = parse_raw_u32(reader.read4()),
+        .greenmask = parse_raw_u32(reader.read4()),
+        .bluemask = parse_raw_u32(reader.read4()),
+        .alphamask = parse_raw_u32(reader.read4()),
+        .cs_type = @enumFromInt(parse_raw_u32(reader.read4())),
         .endpoints = .{
             .red = .{
-                .x = try parse_raw_u32(dib_header_raw[60..64]),
-                .y = try parse_raw_u32(dib_header_raw[64..68]),
-                .z = try parse_raw_u32(dib_header_raw[68..72])
+                .x = parse_raw_u32(reader.read4()),
+                .y = parse_raw_u32(reader.read4()),
+                .z = parse_raw_u32(reader.read4())
             },
             .green = .{
-                .x = try parse_raw_u32(dib_header_raw[72..76]),
-                .y = try parse_raw_u32(dib_header_raw[76..80]),
-                .z = try parse_raw_u32(dib_header_raw[80..84])
+                .x = parse_raw_u32(reader.read4()),
+                .y = parse_raw_u32(reader.read4()),
+                .z = parse_raw_u32(reader.read4())
             },
             .blue = .{
-                .x = try parse_raw_u32(dib_header_raw[84..88]),
-                .y = try parse_raw_u32(dib_header_raw[88..92]),
-                .z = try parse_raw_u32(dib_header_raw[92..96])
+                .x = parse_raw_u32(reader.read4()),
+                .y = parse_raw_u32(reader.read4()),
+                .z = parse_raw_u32(reader.read4())
             }
         },
-        .gamma_red = try parse_raw_u32(dib_header_raw[96..100]),
-        .gamma_green = try parse_raw_u32(dib_header_raw[100..104]),
-        .gamma_blue = try parse_raw_u32(dib_header_raw[104..108])
+        .gamma_red = parse_raw_u32(reader.read4()),
+        .gamma_green = parse_raw_u32(reader.read4()),
+        .gamma_blue = parse_raw_u32(reader.read4()),
     }};
 }
 
-fn parse_BITMAPV5HEADER(dib_header_raw: []u8) !DIB_header {
+fn parse_BITMAPV5HEADER(reader: *bmp_reader.bmp_reader) !DIB_header {
     return DIB_header{ .BITMAPV5HEADER = DIB_header_BITMAPV5HEADER{
         .dib_header_size = @intFromEnum(DIB_header_type.BITMAPV5HEADER),
-        .width = try parse_raw_u32(dib_header_raw[4..8]),
-        .height = try parse_raw_u32(dib_header_raw[8..12]),
-        .planes = try parse_raw_u16(dib_header_raw[12..14]),
-        .bit_count = try parse_raw_u16(dib_header_raw[14..16]),
-        .compression_type = @enumFromInt(try parse_raw_u32(dib_header_raw[16..20])),
-        .size_image = try parse_raw_u32(dib_header_raw[20..24]),
-        .xpelspermeter = try parse_raw_u32(dib_header_raw[24..28]),
-        .ypelspermeter = try parse_raw_u32(dib_header_raw[28..32]),
-        .clrused = try parse_raw_u32(dib_header_raw[32..36]),
-        .clrimportant = try parse_raw_u32(dib_header_raw[36..40]),
-        .redmask = try parse_raw_u32(dib_header_raw[40..44]),
-        .greenmask = try parse_raw_u32(dib_header_raw[44..48]),
-        .bluemask = try parse_raw_u32(dib_header_raw[48..52]),
-        .alphamask = try parse_raw_u32(dib_header_raw[52..56]),
-        .cs_type = @enumFromInt(try parse_raw_u32(dib_header_raw[56..60])),
+        .width = parse_raw_u32(reader.read4()),
+        .height = parse_raw_u32(reader.read4()),
+        .planes = parse_raw_u16(reader.read2()),
+        .bit_count = parse_raw_u16(reader.read2()),
+        .compression_type = @enumFromInt(parse_raw_u32(reader.read4())),
+        .size_image = parse_raw_u32(reader.read4()),
+        .xpelspermeter = parse_raw_u32(reader.read4()),
+        .ypelspermeter = parse_raw_u32(reader.read4()),
+        .clrused = parse_raw_u32(reader.read4()),
+        .clrimportant = parse_raw_u32(reader.read4()),
+        .redmask = parse_raw_u32(reader.read4()),
+        .greenmask = parse_raw_u32(reader.read4()),
+        .bluemask = parse_raw_u32(reader.read4()),
+        .alphamask = parse_raw_u32(reader.read4()),
+        .cs_type = @enumFromInt(parse_raw_u32(reader.read4())),
         .endpoints = .{
             .red = .{
-                .x = try parse_raw_u32(dib_header_raw[60..64]),
-                .y = try parse_raw_u32(dib_header_raw[64..68]),
-                .z = try parse_raw_u32(dib_header_raw[68..72])
+                .x = parse_raw_u32(reader.read4()),
+                .y = parse_raw_u32(reader.read4()),
+                .z = parse_raw_u32(reader.read4())
             },
             .green = .{
-                .x = try parse_raw_u32(dib_header_raw[72..76]),
-                .y = try parse_raw_u32(dib_header_raw[76..80]),
-                .z = try parse_raw_u32(dib_header_raw[80..84])
+                .x = parse_raw_u32(reader.read4()),
+                .y = parse_raw_u32(reader.read4()),
+                .z = parse_raw_u32(reader.read4())
             },
             .blue = .{
-                .x = try parse_raw_u32(dib_header_raw[84..88]),
-                .y = try parse_raw_u32(dib_header_raw[88..92]),
-                .z = try parse_raw_u32(dib_header_raw[92..96])
+                .x = parse_raw_u32(reader.read4()),
+                .y = parse_raw_u32(reader.read4()),
+                .z = parse_raw_u32(reader.read4())
             }
         },
-        .gamma_red = try parse_raw_u32(dib_header_raw[96..100]),
-        .gamma_green = try parse_raw_u32(dib_header_raw[100..104]),
-        .gamma_blue = try parse_raw_u32(dib_header_raw[104..108]),
-        .intent = @enumFromInt(try parse_raw_u32(dib_header_raw[108..112])),
-        .profile_data = try parse_raw_u32(dib_header_raw[112..116]),
-        .profile_size = try parse_raw_u32(dib_header_raw[116..120]),
-        .reserved = try parse_raw_u32(dib_header_raw[120..124])
+        .gamma_red = parse_raw_u32(reader.read4()),
+        .gamma_green = parse_raw_u32(reader.read4()),
+        .gamma_blue = parse_raw_u32(reader.read4()),
+        .intent = @enumFromInt(parse_raw_u32(reader.read4())),
+        .profile_data = parse_raw_u32(reader.read4()),
+        .profile_size = parse_raw_u32(reader.read4()),
+        .reserved = parse_raw_u32(reader.read4())
     }};
 }
 
-fn parse_extra_bitmasks(raw: []u8) !extra_bitmasks {
-    if (raw.len == 12) {
+fn parse_extra_bitmasks(reader: *bmp_reader.bmp_reader, len: u8) !extra_bitmasks {
+    if (len == 12) {
         return extra_bitmasks{
-            .r = try parse_raw_u32(raw[0..4]),
-            .g = try parse_raw_u32(raw[4..8]),
-            .b = try parse_raw_u32(raw[8..12])
+            .r = parse_raw_u32(reader.read4()),
+            .g = parse_raw_u32(reader.read4()),
+            .b = parse_raw_u32(reader.read4())
         };
     }
-    else if (raw.len == 16) {
+    else if (len == 16) {
         return extra_bitmasks{
-            .r = try parse_raw_u32(raw[0..4]),
-            .g = try parse_raw_u32(raw[4..8]),
-            .b = try parse_raw_u32(raw[8..12]),
-            .a = try parse_raw_u32(raw[12..16])
+            .r = parse_raw_u32(reader.read4()),
+            .g = parse_raw_u32(reader.read4()),
+            .b = parse_raw_u32(reader.read4()),
+            .a = parse_raw_u32(reader.read4())
         };
     }
     return error.IncorrectByteCount;
 }
 
-fn parse_raw_u32(slice: *[4]u8) !u32 {
+fn parse_raw_u32(slice: [4]u8) u32 {
     return @as(u32, slice[0]) | @as(u32, slice[1]) << 8 | @as(u32, slice[2]) << 16 | @as(u32, slice[3]) << 24;
 }
 
-fn parse_raw_u16(slice: *[2]u8) !u16 {
+fn parse_raw_u16(slice: [2]u8) u16 {
     return @as(u16, slice[0]) | @as(u16, slice[1]) << 8;
 }
