@@ -5,7 +5,7 @@ const bmp_reader = @import("bmp_reader.zig");
 pub const bmp = struct {
     file_header: bitmap_file_header,
     dib_header: DIB_header,
-    //extra_bit_masks: ?extra_bitmasks
+    extra_bit_masks: ?extra_bitmasks
 };
 
 const bitmap_file_header = struct {
@@ -184,21 +184,21 @@ pub fn parse(file_path: []u8, allocator: std.mem.Allocator) !bmp {
     const dib_header_type: DIB_header_type = @enumFromInt(parse_raw_u32(reader.read4()));
     const dib_header: DIB_header = try parse_dib_header(reader, dib_header_type);
 
-    //var extra_bit_masks: ?extra_bitmasks = null;
+    var extra_bit_masks: ?extra_bitmasks = null;
 
-    //if (dib_header == DIB_header_type.BITMAPINFOHEADER) {
-    //    if (dib_header.BITMAPINFOHEADER.compression_type == DIB_compression_type.BI_BITFIELDS) {
-    //        extra_bit_masks = try parse_extra_bitmasks(file_contents_raw[file_header_size+40..file_header_size+52]);
-    //    }
-    //    else if (dib_header.BITMAPINFOHEADER.compression_type == DIB_compression_type.BI_ALPHABITFIELDS) {
-    //        extra_bit_masks = try parse_extra_bitmasks(file_contents_raw[file_header_size+40..file_header_size+56]);
-    //    }
-    //}
+    if (dib_header == DIB_header_type.BITMAPINFOHEADER) {
+        if (dib_header.BITMAPINFOHEADER.compression_type == DIB_compression_type.BI_BITFIELDS) {
+            extra_bit_masks = parse_extra_bitmasks(reader, false);
+        }
+        else if (dib_header.BITMAPINFOHEADER.compression_type == DIB_compression_type.BI_ALPHABITFIELDS) {
+            extra_bit_masks = parse_extra_bitmasks(reader, true);
+        }
+    }
 
     return bmp{
         .file_header = file_header,
         .dib_header = dib_header,
-        //.extra_bit_masks = extra_bit_masks
+        .extra_bit_masks = extra_bit_masks
     };
 }
 
@@ -337,15 +337,15 @@ fn parse_BITMAPV5HEADER(reader: *bmp_reader.bmp_reader) !DIB_header {
     }};
 }
 
-fn parse_extra_bitmasks(reader: *bmp_reader.bmp_reader, len: u8) !extra_bitmasks {
-    if (len == 12) {
+fn parse_extra_bitmasks(reader: *bmp_reader.bmp_reader, alpha: bool) extra_bitmasks {
+    if (!alpha) {
         return extra_bitmasks{
             .r = parse_raw_u32(reader.read4()),
             .g = parse_raw_u32(reader.read4()),
             .b = parse_raw_u32(reader.read4())
         };
     }
-    else if (len == 16) {
+    else {
         return extra_bitmasks{
             .r = parse_raw_u32(reader.read4()),
             .g = parse_raw_u32(reader.read4()),
@@ -353,7 +353,6 @@ fn parse_extra_bitmasks(reader: *bmp_reader.bmp_reader, len: u8) !extra_bitmasks
             .a = parse_raw_u32(reader.read4())
         };
     }
-    return error.IncorrectByteCount;
 }
 
 fn parse_raw_u32(slice: [4]u8) u32 {
