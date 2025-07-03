@@ -352,12 +352,10 @@ fn parse_extra_bitmasks(raw: []u8) !extra_bitmasks {
     return error.IncorrectByteCount;
 }
 
-fn parse_raw_u32(slice: []u8) !u32 {
-    if (slice.len != 4) return error.IncorrectByteCount;
+fn parse_raw_u32(slice: *[4]u8) !u32 {
     return @as(u32, slice[0]) | @as(u32, slice[1]) << 8 | @as(u32, slice[2]) << 16 | @as(u32, slice[3]) << 24;
 }
 
-fn parse_raw_u16(slice: []u8) !u16 {
-    if (slice.len != 2) return error.IncorrectByteCount;
+fn parse_raw_u16(slice: *[2]u8) !u16 {
     return @as(u16, slice[0]) | @as(u16, slice[1]) << 8;
 }
