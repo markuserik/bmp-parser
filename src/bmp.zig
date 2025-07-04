@@ -165,6 +165,8 @@ const extra_bitmasks = struct {
     a: ?u32 = null
 };
 
+const endianness: std.builtin.Endian = std.builtin.Endian.little;
+
 pub fn parse(file_path: []u8) !bmp {
     const file: fs.File = try fs.cwd().openFile(file_path, .{});
     defer file.close();
@@ -172,7 +174,7 @@ pub fn parse(file_path: []u8) !bmp {
 
     const file_header: bitmap_file_header = try parse_file_header(reader);
 
-    const dib_header_type: DIB_header_type = @enumFromInt(try reader.readInt(u32, std.builtin.Endian.little));
+    const dib_header_type: DIB_header_type = @enumFromInt(try reader.readInt(u32, endianness));
     const dib_header: DIB_header = try parse_dib_header(reader, dib_header_type);
 
     var extra_bit_masks: ?extra_bitmasks = null;
@@ -196,10 +198,10 @@ pub fn parse(file_path: []u8) !bmp {
 fn parse_file_header(reader: fs.File.Reader) !bitmap_file_header {
     return bitmap_file_header{
         .identifier = try reader.readBytesNoEof(2),
-        .file_size = try reader.readInt(u32, std.builtin.Endian.little),
+        .file_size = try reader.readInt(u32, endianness),
         .reserved1 = try reader.readBytesNoEof(2),
         .reserved2 = try reader.readBytesNoEof(2),
-        .offset = try reader.readInt(u32, std.builtin.Endian.little)
+        .offset = try reader.readInt(u32, endianness)
     };
 }
 
@@ -219,127 +221,127 @@ fn parse_dib_header(reader: fs.File.Reader, dib_header_type: DIB_header_type) !D
 fn parse_BITMAPCOREHEADER(reader: fs.File.Reader) !DIB_header {
     return DIB_header{ .BITMAPCOREHEADER = DIB_header_BITMAPCOREHEADER{
         .dib_header_size = @intFromEnum(DIB_header_type.BITMAPCOREHEADER),
-        .width = try reader.readInt(u16, std.builtin.Endian.little),
-        .height = try reader.readInt(u16, std.builtin.Endian.little),
-        .planes = try reader.readInt(u16, std.builtin.Endian.little),
-        .bit_count = try reader.readInt(u16, std.builtin.Endian.little)
+        .width = try reader.readInt(u16, endianness),
+        .height = try reader.readInt(u16, endianness),
+        .planes = try reader.readInt(u16, endianness),
+        .bit_count = try reader.readInt(u16, endianness)
     }};
 }
 
 fn parse_BITMAPINFOHEADER(reader: fs.File.Reader) !DIB_header {
     return DIB_header{ .BITMAPINFOHEADER = DIB_header_BITMAPINFOHEADER{
         .dib_header_size = @intFromEnum(DIB_header_type.BITMAPINFOHEADER),
-        .width = try reader.readInt(u32, std.builtin.Endian.little),
-        .height = try reader.readInt(u32, std.builtin.Endian.little),
-        .planes = try reader.readInt(u16, std.builtin.Endian.little),
-        .bit_count = try reader.readInt(u16, std.builtin.Endian.little),
-        .compression_type = @enumFromInt(try reader.readInt(u32, std.builtin.Endian.little)),
-        .size_image = try reader.readInt(u32, std.builtin.Endian.little),
-        .xpelspermeter = try reader.readInt(u32, std.builtin.Endian.little),
-        .ypelspermeter = try reader.readInt(u32, std.builtin.Endian.little),
-        .clrused = try reader.readInt(u32, std.builtin.Endian.little),
-        .clrimportant = try reader.readInt(u32, std.builtin.Endian.little)
+        .width = try reader.readInt(u32, endianness),
+        .height = try reader.readInt(u32, endianness),
+        .planes = try reader.readInt(u16, endianness),
+        .bit_count = try reader.readInt(u16, endianness),
+        .compression_type = @enumFromInt(try reader.readInt(u32, endianness)),
+        .size_image = try reader.readInt(u32, endianness),
+        .xpelspermeter = try reader.readInt(u32, endianness),
+        .ypelspermeter = try reader.readInt(u32, endianness),
+        .clrused = try reader.readInt(u32, endianness),
+        .clrimportant = try reader.readInt(u32, endianness)
     }};
 }
 
 fn parse_BITMAPV4HEADER(reader: fs.File.Reader) !DIB_header {
     return DIB_header{ .BITMAPV4HEADER = DIB_header_BITMAPV4HEADER{
         .dib_header_size = @intFromEnum(DIB_header_type.BITMAPV4HEADER),
-        .width = try reader.readInt(u32, std.builtin.Endian.little),
-        .height = try reader.readInt(u32, std.builtin.Endian.little),
-        .planes = try reader.readInt(u16, std.builtin.Endian.little),
-        .bit_count = try reader.readInt(u16, std.builtin.Endian.little),
-        .compression_type = @enumFromInt(try reader.readInt(u32, std.builtin.Endian.little)),
-        .size_image = try reader.readInt(u32, std.builtin.Endian.little),
-        .xpelspermeter = try reader.readInt(u32, std.builtin.Endian.little),
-        .ypelspermeter = try reader.readInt(u32, std.builtin.Endian.little),
-        .clrused = try reader.readInt(u32, std.builtin.Endian.little),
-        .clrimportant = try reader.readInt(u32, std.builtin.Endian.little),
-        .redmask = try reader.readInt(u32, std.builtin.Endian.little),
-        .greenmask = try reader.readInt(u32, std.builtin.Endian.little),
-        .bluemask = try reader.readInt(u32, std.builtin.Endian.little),
-        .alphamask = try reader.readInt(u32, std.builtin.Endian.little),
-        .cs_type = @enumFromInt(try reader.readInt(u32, std.builtin.Endian.little)),
+        .width = try reader.readInt(u32, endianness),
+        .height = try reader.readInt(u32, endianness),
+        .planes = try reader.readInt(u16, endianness),
+        .bit_count = try reader.readInt(u16, endianness),
+        .compression_type = @enumFromInt(try reader.readInt(u32, endianness)),
+        .size_image = try reader.readInt(u32, endianness),
+        .xpelspermeter = try reader.readInt(u32, endianness),
+        .ypelspermeter = try reader.readInt(u32, endianness),
+        .clrused = try reader.readInt(u32, endianness),
+        .clrimportant = try reader.readInt(u32, endianness),
+        .redmask = try reader.readInt(u32, endianness),
+        .greenmask = try reader.readInt(u32, endianness),
+        .bluemask = try reader.readInt(u32, endianness),
+        .alphamask = try reader.readInt(u32, endianness),
+        .cs_type = @enumFromInt(try reader.readInt(u32, endianness)),
         .endpoints = .{
             .red = .{
-                .x = try reader.readInt(u32, std.builtin.Endian.little),
-                .y = try reader.readInt(u32, std.builtin.Endian.little),
-                .z = try reader.readInt(u32, std.builtin.Endian.little)
+                .x = try reader.readInt(u32, endianness),
+                .y = try reader.readInt(u32, endianness),
+                .z = try reader.readInt(u32, endianness)
             },
             .green = .{
-                .x = try reader.readInt(u32, std.builtin.Endian.little),
-                .y = try reader.readInt(u32, std.builtin.Endian.little),
-                .z = try reader.readInt(u32, std.builtin.Endian.little)
+                .x = try reader.readInt(u32, endianness),
+                .y = try reader.readInt(u32, endianness),
+                .z = try reader.readInt(u32, endianness)
             },
             .blue = .{
-                .x = try reader.readInt(u32, std.builtin.Endian.little),
-                .y = try reader.readInt(u32, std.builtin.Endian.little),
-                .z = try reader.readInt(u32, std.builtin.Endian.little)
+                .x = try reader.readInt(u32, endianness),
+                .y = try reader.readInt(u32, endianness),
+                .z = try reader.readInt(u32, endianness)
             }
         },
-        .gamma_red = try reader.readInt(u32, std.builtin.Endian.little),
-        .gamma_green = try reader.readInt(u32, std.builtin.Endian.little),
-        .gamma_blue = try reader.readInt(u32, std.builtin.Endian.little),
+        .gamma_red = try reader.readInt(u32, endianness),
+        .gamma_green = try reader.readInt(u32, endianness),
+        .gamma_blue = try reader.readInt(u32, endianness),
     }};
 }
 
 fn parse_BITMAPV5HEADER(reader: fs.File.Reader) !DIB_header {
     return DIB_header{ .BITMAPV5HEADER = DIB_header_BITMAPV5HEADER{
         .dib_header_size = @intFromEnum(DIB_header_type.BITMAPV5HEADER),
-        .width = try reader.readInt(u32, std.builtin.Endian.little),
-        .height = try reader.readInt(u32, std.builtin.Endian.little),
-        .planes = try reader.readInt(u16, std.builtin.Endian.little),
-        .bit_count = try reader.readInt(u16, std.builtin.Endian.little),
-        .compression_type = @enumFromInt(try reader.readInt(u32, std.builtin.Endian.little)),
-        .size_image = try reader.readInt(u32, std.builtin.Endian.little),
-        .xpelspermeter = try reader.readInt(u32, std.builtin.Endian.little),
-        .ypelspermeter = try reader.readInt(u32, std.builtin.Endian.little),
-        .clrused = try reader.readInt(u32, std.builtin.Endian.little),
-        .clrimportant = try reader.readInt(u32, std.builtin.Endian.little),
-        .redmask = try reader.readInt(u32, std.builtin.Endian.little),
-        .greenmask = try reader.readInt(u32, std.builtin.Endian.little),
-        .bluemask = try reader.readInt(u32, std.builtin.Endian.little),
-        .alphamask = try reader.readInt(u32, std.builtin.Endian.little),
-        .cs_type = @enumFromInt(try reader.readInt(u32, std.builtin.Endian.little)),
+        .width = try reader.readInt(u32, endianness),
+        .height = try reader.readInt(u32, endianness),
+        .planes = try reader.readInt(u16, endianness),
+        .bit_count = try reader.readInt(u16, endianness),
+        .compression_type = @enumFromInt(try reader.readInt(u32, endianness)),
+        .size_image = try reader.readInt(u32, endianness),
+        .xpelspermeter = try reader.readInt(u32, endianness),
+        .ypelspermeter = try reader.readInt(u32, endianness),
+        .clrused = try reader.readInt(u32, endianness),
+        .clrimportant = try reader.readInt(u32, endianness),
+        .redmask = try reader.readInt(u32, endianness),
+        .greenmask = try reader.readInt(u32, endianness),
+        .bluemask = try reader.readInt(u32, endianness),
+        .alphamask = try reader.readInt(u32, endianness),
+        .cs_type = @enumFromInt(try reader.readInt(u32, endianness)),
         .endpoints = .{
             .red = .{
-                .x = try reader.readInt(u32, std.builtin.Endian.little),
-                .y = try reader.readInt(u32, std.builtin.Endian.little),
-                .z = try reader.readInt(u32, std.builtin.Endian.little)
+                .x = try reader.readInt(u32, endianness),
+                .y = try reader.readInt(u32, endianness),
+                .z = try reader.readInt(u32, endianness)
             },
             .green = .{
-                .x = try reader.readInt(u32, std.builtin.Endian.little),
-                .y = try reader.readInt(u32, std.builtin.Endian.little),
-                .z = try reader.readInt(u32, std.builtin.Endian.little)
+                .x = try reader.readInt(u32, endianness),
+                .y = try reader.readInt(u32, endianness),
+                .z = try reader.readInt(u32, endianness)
             },
             .blue = .{
-                .x = try reader.readInt(u32, std.builtin.Endian.little),
-                .y = try reader.readInt(u32, std.builtin.Endian.little),
-                .z = try reader.readInt(u32, std.builtin.Endian.little)
+                .x = try reader.readInt(u32, endianness),
+                .y = try reader.readInt(u32, endianness),
+                .z = try reader.readInt(u32, endianness)
             }
         },
-        .gamma_red = try reader.readInt(u32, std.builtin.Endian.little),
-        .gamma_green = try reader.readInt(u32, std.builtin.Endian.little),
-        .gamma_blue = try reader.readInt(u32, std.builtin.Endian.little),
-        .intent = @enumFromInt(try reader.readInt(u32, std.builtin.Endian.little)),
-        .profile_data = try reader.readInt(u32, std.builtin.Endian.little),
-        .profile_size = try reader.readInt(u32, std.builtin.Endian.little),
-        .reserved = try reader.readInt(u32, std.builtin.Endian.little)
+        .gamma_red = try reader.readInt(u32, endianness),
+        .gamma_green = try reader.readInt(u32, endianness),
+        .gamma_blue = try reader.readInt(u32, endianness),
+        .intent = @enumFromInt(try reader.readInt(u32, endianness)),
+        .profile_data = try reader.readInt(u32, endianness),
+        .profile_size = try reader.readInt(u32, endianness),
+        .reserved = try reader.readInt(u32, endianness)
     }};
 }
 
 fn parse_extra_bitmasks(reader: fs.File.Reader, alpha: bool) !extra_bitmasks {
     if (!alpha) {
         return extra_bitmasks{
-            .r = try reader.readInt(u32, std.builtin.Endian.little),
-            .g = try reader.readInt(u32, std.builtin.Endian.little),
-            .b = try reader.readInt(u32, std.builtin.Endian.little)
+            .r = try reader.readInt(u32, endianness),
+            .g = try reader.readInt(u32, endianness),
+            .b = try reader.readInt(u32, endianness)
         };
     }
     return extra_bitmasks{
-        .r = try reader.readInt(u32, std.builtin.Endian.little),
-        .g = try reader.readInt(u32, std.builtin.Endian.little),
-        .b = try reader.readInt(u32, std.builtin.Endian.little),
-        .a = try reader.readInt(u32, std.builtin.Endian.little)
+        .r = try reader.readInt(u32, endianness),
+        .g = try reader.readInt(u32, endianness),
+        .b = try reader.readInt(u32, endianness),
+        .a = try reader.readInt(u32, endianness)
     };
 }
