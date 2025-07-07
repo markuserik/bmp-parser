@@ -217,6 +217,12 @@ pub fn parse(file_path: []u8) !bmp {
         DIB_header.BITMAPV5HEADER => |header| { height = header.height; width = header.width; bit_count = header.bit_count; alpha_mask = header.alpha_mask; compression_type = header.compression_type; },
         else => unreachable
     }
+
+    if (bit_count <= 8) {
+        std.debug.print("Color table not implemented, bit counts of 8 or lower not supported\n", .{});
+        unreachable;
+    }
+    
     const has_alpha: bool = check_alpha(compression_type, bit_count, alpha_mask);
     
     const pixel_array: [][]pixel = try parse_pixel_array(reader, height, width, bit_count, has_alpha, allocator);
