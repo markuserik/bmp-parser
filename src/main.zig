@@ -13,7 +13,7 @@ pub fn main() !void {
     }
 
     const bmp_file: bmp.bmp = try bmp.parse(args[1], allocator);
-    defer bmp_file.free_bmp();
+    defer bmp_file.deinit();
     std.debug.print("File Header:\nIdentifier: {s}\nFile size: {}\nReserved1: {s}\nReserved2: {s}\nOffset: {}\n\n", .{
         bmp_file.file_header.identifier,
         bmp_file.file_header.file_size,

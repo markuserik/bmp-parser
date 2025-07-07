@@ -8,7 +8,7 @@ pub const bmp = struct {
     pixel_array: [][]pixel,
     allocator: std.mem.Allocator,
 
-    pub fn free_bmp(self: *const bmp) void {
+    pub fn deinit(self: *const bmp) void {
         for (0..self.*.pixel_array.len) |i| {
             self.*.allocator.free(self.*.pixel_array[i]);
         }
