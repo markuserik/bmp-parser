@@ -211,10 +211,10 @@ pub fn parse(file_path: []u8, allocator: std.mem.Allocator) !bmp {
     var compression_type: ?DIB_compression_type = null;
     
     switch (dib_header) {
-        DIB_header.BITMAPCOREHEADER => |*header| { height = @as(u32, header.*.height); width = @as(u32, header.*.width); bit_count = header.*.bit_count; },
-        DIB_header.BITMAPINFOHEADER => |*header| { height = header.*.height; width = header.*.width; bit_count = header.*.bit_count; compression_type = header.*.compression_type; },
-        DIB_header.BITMAPV4HEADER => |*header| { height = header.*.height; width = header.*.width; bit_count = header.*.bit_count; alpha_mask = header.*.alpha_mask; compression_type = header.*.compression_type; },
-        DIB_header.BITMAPV5HEADER => |*header| { height = header.*.height; width = header.*.width; bit_count = header.*.bit_count; alpha_mask = header.*.alpha_mask; compression_type = header.*.compression_type; },
+        DIB_header.BITMAPCOREHEADER => |header| { height = @as(u32, header.height); width = @as(u32, header.width); bit_count = header.bit_count; },
+        DIB_header.BITMAPINFOHEADER => |header| { height = header.height; width = header.width; bit_count = header.bit_count; compression_type = header.compression_type; },
+        DIB_header.BITMAPV4HEADER => |header| { height = header.height; width = header.width; bit_count = header.bit_count; alpha_mask = header.alpha_mask; compression_type = header.compression_type; },
+        DIB_header.BITMAPV5HEADER => |header| { height = header.height; width = header.width; bit_count = header.bit_count; alpha_mask = header.alpha_mask; compression_type = header.compression_type; },
         else => unreachable
     }
     const has_alpha: bool = check_alpha(compression_type, bit_count, alpha_mask);
