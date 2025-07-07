@@ -12,7 +12,7 @@ pub fn main() !void {
         return;
     }
 
-    const bmp_file: bmp.bmp = try bmp.parse(args[1], allocator);
+    const bmp_file: bmp.bmp = try bmp.parse(args[1]);
     defer bmp_file.deinit();
     std.debug.print("File Header:\nIdentifier: {s}\nFile size: {}\nReserved1: {s}\nReserved2: {s}\nOffset: {}\n\n", .{
         bmp_file.file_header.identifier,

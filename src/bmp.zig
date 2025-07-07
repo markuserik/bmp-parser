@@ -6,13 +6,10 @@ pub const bmp = struct {
     dib_header: DIB_header,
     extra_bit_masks: ?extra_bitmasks,
     pixel_array: [][]pixel,
-    allocator: std.mem.Allocator,
+    arena: std.heap.ArenaAllocator,
 
     pub fn deinit(self: *const bmp) void {
-        for (0..self.*.pixel_array.len) |i| {
-            self.*.allocator.free(self.*.pixel_array[i]);
-        }
-        self.*.allocator.free(self.*.pixel_array);
+        self.*.arena.deinit();
     }
 };
 
@@ -183,7 +180,10 @@ const extra_bitmasks = struct {
 
 const endianness: std.builtin.Endian = std.builtin.Endian.little;
 
-pub fn parse(file_path: []u8, allocator: std.mem.Allocator) !bmp {
+pub fn parse(file_path: []u8) !bmp {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const allocator: std.mem.Allocator = arena.allocator();
+
     const file: fs.File = try fs.cwd().openFile(file_path, .{});
     defer file.close();
     var reader: fs.File.Reader = file.reader();
@@ -226,7 +226,7 @@ pub fn parse(file_path: []u8, allocator: std.mem.Allocator) !bmp {
         .dib_header = dib_header,
         .extra_bit_masks = extra_bit_masks,
         .pixel_array = pixel_array,
-        .allocator = allocator
+        .arena = arena
     };
 }
 
