@@ -12,7 +12,8 @@ pub fn main() !void {
         return;
     }
 
-    const bmp_file: bmp.bmp = try bmp.parse(args[1]);
+    const bmp_file: bmp.bmp = try bmp.parse(args[1], allocator);
+    defer bmp_file.free_bmp();
     std.debug.print("File Header:\nIdentifier: {s}\nFile size: {}\nReserved1: {s}\nReserved2: {s}\nOffset: {}\n\n", .{
         bmp_file.file_header.identifier,
         bmp_file.file_header.file_size,
@@ -40,7 +41,7 @@ pub fn main() !void {
             header.*.redmask,
             header.*.greenmask,
             header.*.bluemask,
-            header.*.alphamask,
+            header.*.alpha_mask,
             @tagName(header.*.cs_type),
             header.*.endpoints.red.x,
             header.*.endpoints.red.y,
@@ -59,6 +60,22 @@ pub fn main() !void {
             header.*.profile_size,
             header.*.reserved
             });
+            var n: u32 = 1;
+            var alpha_null: bool = false;
+            if (bmp_file.pixel_array[0][0].a == null) {
+                alpha_null = true;
+            }
+            for (0..header.*.height) |y| {
+                for (0..header.*.width) |x| {
+                    if (!alpha_null) {
+                        std.debug.print("Pixel {}: R{} G{} B{} A{}\n", .{n, bmp_file.pixel_array[y][x].r, bmp_file.pixel_array[y][x].g, bmp_file.pixel_array[y][x].b, bmp_file.pixel_array[y][x].a.?});
+                    }
+                    else {
+                        std.debug.print("Pixel {}: R:{} G:{} B:{} A:NULL\n", .{n, bmp_file.pixel_array[y][x].r, bmp_file.pixel_array[y][x].g, bmp_file.pixel_array[y][x].b});
+                    }
+                    n += 1;
+                }
+            }
         },
         else => {}
     }
