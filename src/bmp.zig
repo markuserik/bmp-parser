@@ -222,6 +222,9 @@ pub fn parse(file_path: []u8) !bmp {
         std.debug.print("Color table not implemented, bit counts of 8 or lower not supported\n", .{});
         unreachable;
     }
+
+    const gap1: u32 = file_header.offset - (14 + @intFromEnum(dib_header_type));
+    try reader.skipBytes(gap1, .{});
     
     const has_alpha: bool = check_alpha(compression_type, bit_count, alpha_mask);
     
