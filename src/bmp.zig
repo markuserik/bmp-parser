@@ -9,7 +9,7 @@ pub const bmp = struct {
     arena: std.heap.ArenaAllocator,
 
     pub fn deinit(self: *const bmp) void {
-        self.*.arena.deinit();
+        self.arena.deinit();
     }
 };
 
