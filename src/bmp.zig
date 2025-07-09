@@ -180,7 +180,7 @@ const extra_bitmasks = struct {
 
 const endianness: std.builtin.Endian = std.builtin.Endian.little;
 
-pub fn parse(file_path: []u8) !bmp {
+pub fn parse(file_path: []const u8) !bmp {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     const allocator: std.mem.Allocator = arena.allocator();
 
