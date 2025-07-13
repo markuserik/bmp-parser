@@ -2,10 +2,10 @@ const std = @import("std");
 const fs = std.fs;
 
 pub const bmp = struct {
-    file_header: bitmap_file_header,
+    file_header: File_header,
     dib_header: DIB_header,
-    extra_bit_masks: ?extra_bitmasks,
-    pixel_array: [][]pixel,
+    extra_bit_masks: ?Extra_bit_masks,
+    pixels: [][]Pixel,
     arena: std.heap.ArenaAllocator,
 
     pub fn deinit(self: *const bmp) void {
@@ -13,7 +13,7 @@ pub const bmp = struct {
     }
 };
 
-const bitmap_file_header = struct {
+const File_header = struct {
     identifier: [2]u8,
     file_size: u32,
     reserved1: [2]u8,
@@ -103,7 +103,7 @@ const DIB_header_BITMAPV5HEADER = struct {
     gamma_red: u32,
     gamma_green: u32,
     gamma_blue: u32,
-    intent: rendering_intent,
+    rendering_intent: Rendering_intent,
     profile_data: u32,
     profile_size: u32,
     reserved: u32
@@ -145,7 +145,7 @@ pub const CS_type = enum(u32) {
     PROFILE_EMBEDDED = 0x4D424544
 };
 
-pub const pixel = struct {
+pub const Pixel = struct {
     r: u8,
     g: u8,
     b: u8,
@@ -164,14 +164,14 @@ pub const ciexyz = struct {
     z: u32
 };
 
-pub const rendering_intent = enum(u32) {
+pub const Rendering_intent = enum(u32) {
     LCS_GM_ABSOLUTECOLORIMETRIC = 8,
     LCS_GM_BUSINESS = 1,
     LCS_GM_GRAPHICS = 2,
     LCS_GM_IMAGES = 4
 };
 
-const extra_bitmasks = struct {
+const Extra_bit_masks = struct {
     r: u32,
     g: u32,
     b: u32,
@@ -188,19 +188,19 @@ pub fn parse(file_path: []const u8) !bmp {
     defer file.close();
     var reader: fs.File.Reader = file.reader();
 
-    const file_header: bitmap_file_header = try parse_file_header(reader);
+    const file_header: File_header = try parse_file_header(reader);
 
     const dib_header_type: DIB_header_type = @enumFromInt(try reader.readInt(u32, endianness));
     const dib_header: DIB_header = try parse_dib_header(reader, dib_header_type);
 
-    var extra_bit_masks: ?extra_bitmasks = null;
+    var extra_bit_masks: ?Extra_bit_masks = null;
 
     if (dib_header == DIB_header_type.BITMAPINFOHEADER) {
         if (dib_header.BITMAPINFOHEADER.compression_type == DIB_compression_type.BI_BITFIELDS) {
-            extra_bit_masks = try parse_extra_bitmasks(reader, false);
+            extra_bit_masks = try parse_extra_bit_masks(reader, false);
         }
         else if (dib_header.BITMAPINFOHEADER.compression_type == DIB_compression_type.BI_ALPHABITFIELDS) {
-            extra_bit_masks = try parse_extra_bitmasks(reader, true);
+            extra_bit_masks = try parse_extra_bit_masks(reader, true);
         }
     }
 
@@ -228,19 +228,19 @@ pub fn parse(file_path: []const u8) !bmp {
     
     const has_alpha: bool = check_alpha(compression_type, bit_count, alpha_mask);
     
-    const pixel_array: [][]pixel = try parse_pixel_array(reader, height, width, bit_count, has_alpha, allocator);
+    const pixels: [][]Pixel = try parse_pixels(reader, height, width, bit_count, has_alpha, allocator);
 
     return bmp{
         .file_header = file_header,
         .dib_header = dib_header,
         .extra_bit_masks = extra_bit_masks,
-        .pixel_array = pixel_array,
+        .pixels = pixels,
         .arena = arena
     };
 }
 
-fn parse_file_header(reader: fs.File.Reader) !bitmap_file_header {
-    return bitmap_file_header{
+fn parse_file_header(reader: fs.File.Reader) !File_header {
+    return File_header{
         .identifier = try reader.readBytesNoEof(2),
         .file_size = try reader.readInt(u32, endianness),
         .reserved1 = try reader.readBytesNoEof(2),
@@ -367,22 +367,22 @@ fn parse_BITMAPV5HEADER(reader: fs.File.Reader) !DIB_header {
         .gamma_red = try reader.readInt(u32, endianness),
         .gamma_green = try reader.readInt(u32, endianness),
         .gamma_blue = try reader.readInt(u32, endianness),
-        .intent = @enumFromInt(try reader.readInt(u32, endianness)),
+        .rendering_intent = @enumFromInt(try reader.readInt(u32, endianness)),
         .profile_data = try reader.readInt(u32, endianness),
         .profile_size = try reader.readInt(u32, endianness),
         .reserved = try reader.readInt(u32, endianness)
     }};
 }
 
-fn parse_extra_bitmasks(reader: fs.File.Reader, has_alpha: bool) !extra_bitmasks {
+fn parse_extra_bit_masks(reader: fs.File.Reader, has_alpha: bool) !Extra_bit_masks {
     if (!has_alpha) {
-        return extra_bitmasks{
+        return Extra_bit_masks{
             .r = try reader.readInt(u32, endianness),
             .g = try reader.readInt(u32, endianness),
             .b = try reader.readInt(u32, endianness)
         };
     }
-    return extra_bitmasks{
+    return Extra_bit_masks{
         .r = try reader.readInt(u32, endianness),
         .g = try reader.readInt(u32, endianness),
         .b = try reader.readInt(u32, endianness),
@@ -390,10 +390,10 @@ fn parse_extra_bitmasks(reader: fs.File.Reader, has_alpha: bool) !extra_bitmasks
     };
 }
 
-fn parse_pixel_array(reader: fs.File.Reader, height: u32, width: u32, bit_count: u16, has_alpha: bool, allocator: std.mem.Allocator) ![][]pixel {
-    var pixel_array: [][]pixel = try allocator.alloc([]pixel, height);
-    for (0..pixel_array.len) |i| {
-        pixel_array[i] = try allocator.alloc(pixel, width);
+fn parse_pixels(reader: fs.File.Reader, height: u32, width: u32, bit_count: u16, has_alpha: bool, allocator: std.mem.Allocator) ![][]Pixel {
+    var pixels: [][]Pixel = try allocator.alloc([]Pixel, height);
+    for (0..pixels.len) |i| {
+        pixels[i] = try allocator.alloc(Pixel, width);
     }
     const row_len: u32 = (bit_count / 8) * width;
     const remainder: u32 = row_len % 4;
@@ -402,26 +402,26 @@ fn parse_pixel_array(reader: fs.File.Reader, height: u32, width: u32, bit_count:
         for (0..width) |x| {
             if (has_alpha) {
                 const raw_pixel: [4]u8 = try reader.readBytesNoEof(4);
-                pixel_array[y][x].r = raw_pixel[0];
-                pixel_array[y][x].g = raw_pixel[1];
-                pixel_array[y][x].b = raw_pixel[2];
-                pixel_array[y][x].a = raw_pixel[3];
+                pixels[y][x].r = raw_pixel[0];
+                pixels[y][x].g = raw_pixel[1];
+                pixels[y][x].b = raw_pixel[2];
+                pixels[y][x].a = raw_pixel[3];
             }
             else {
                 switch (bit_count) {
                     24 => {
                         const raw_pixel: [3]u8 = try reader.readBytesNoEof(3);
-                        pixel_array[y][x].r = raw_pixel[0];
-                        pixel_array[y][x].g = raw_pixel[1];
-                        pixel_array[y][x].b = raw_pixel[2];
-                        pixel_array[y][x].a = null;
+                        pixels[y][x].r = raw_pixel[0];
+                        pixels[y][x].g = raw_pixel[1];
+                        pixels[y][x].b = raw_pixel[2];
+                        pixels[y][x].a = null;
                     },
                     32 => {
                         const raw_pixel: [4]u8 = try reader.readBytesNoEof(4);
-                        pixel_array[y][x].r = raw_pixel[0];
-                        pixel_array[y][x].g = raw_pixel[1];
-                        pixel_array[y][x].b = raw_pixel[2];
-                        pixel_array[y][x].a = null;
+                        pixels[y][x].r = raw_pixel[0];
+                        pixels[y][x].g = raw_pixel[1];
+                        pixels[y][x].b = raw_pixel[2];
+                        pixels[y][x].a = null;
                     },
                     else => { std.debug.print("Bit count not supported\n", .{}); unreachable; }
                 }
@@ -429,7 +429,7 @@ fn parse_pixel_array(reader: fs.File.Reader, height: u32, width: u32, bit_count:
         }
         _ = try reader.skipBytes(padding, .{});
     }
-    return pixel_array;
+    return pixels;
 }
 
 fn check_alpha(compression_type: ?DIB_compression_type, bit_count: u16, alpha_mask: u32) bool {
