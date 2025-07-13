@@ -47,5 +47,13 @@ pub fn parse_pixels(reader: fs.File.Reader, height: u32, width: u32, bit_count: 
         }
         _ = try reader.skipBytes(padding, .{});
     }
+
+    const len: usize = pixels.len / 2;
+    for (0..len) |i| {
+        const temp = pixels[i];
+        pixels[i] = pixels[pixels.len - i - 1];
+        pixels[pixels.len - i - 1] = temp;
+    }
+    
     return pixels;
 }
