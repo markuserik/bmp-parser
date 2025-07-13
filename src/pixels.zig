@@ -20,25 +20,25 @@ pub fn parse_pixels(reader: fs.File.Reader, height: u32, width: u32, bit_count: 
         for (0..width) |x| {
             if (has_alpha) {
                 const raw_pixel: [4]u8 = try reader.readBytesNoEof(4);
-                pixels[y][x].r = raw_pixel[0];
+                pixels[y][x].b = raw_pixel[0];
                 pixels[y][x].g = raw_pixel[1];
-                pixels[y][x].b = raw_pixel[2];
+                pixels[y][x].r = raw_pixel[2];
                 pixels[y][x].a = raw_pixel[3];
             }
             else {
                 switch (bit_count) {
                     24 => {
                         const raw_pixel: [3]u8 = try reader.readBytesNoEof(3);
-                        pixels[y][x].r = raw_pixel[0];
+                        pixels[y][x].b = raw_pixel[0];
                         pixels[y][x].g = raw_pixel[1];
-                        pixels[y][x].b = raw_pixel[2];
+                        pixels[y][x].r = raw_pixel[2];
                         pixels[y][x].a = null;
                     },
                     32 => {
                         const raw_pixel: [4]u8 = try reader.readBytesNoEof(4);
-                        pixels[y][x].r = raw_pixel[0];
+                        pixels[y][x].b = raw_pixel[0];
                         pixels[y][x].g = raw_pixel[1];
-                        pixels[y][x].b = raw_pixel[2];
+                        pixels[y][x].r = raw_pixel[2];
                         pixels[y][x].a = null;
                     },
                     else => { std.debug.print("Bit count not supported\n", .{}); unreachable; }
