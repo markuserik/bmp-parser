@@ -5,13 +5,15 @@ pub fn build(b: *std.Build) void {
 
     const optimize = b.standardOptimizeOption(.{});
 
-    const module = b.addModule("bmp_parser", .{ .root_source_file = b.path("src/bmp.zig")});
+    const module = b.addModule("bmp_parser", .{
+        .root_source_file = b.path("src/bmp.zig"),
+        .target = target,
+        .optimize = optimize
+    });
 
     const test_step = b.step("test", "Run unit tests");
     const bmp_test = b.addTest(.{
-        .root_source_file = b.path("src/bmp.zig"),
-        .optimize = optimize,
-        .target = target
+        .root_module = module,
     });
     const run_test = b.addRunArtifact(bmp_test);
     bmp_test.root_module.addImport("bmp_parser", module);
