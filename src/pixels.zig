@@ -8,7 +8,7 @@ g: u8,
 b: u8,
 a: ?u8,
 
-pub fn parse_pixels(reader: fs.File.Reader, height: u32, width: u32, bit_count: u16, has_alpha: bool, allocator: std.mem.Allocator) ![][]Pixel {
+pub fn parse_pixels(reader: *std.io.Reader, height: u32, width: u32, bit_count: u16, has_alpha: bool, allocator: std.mem.Allocator) ![][]Pixel {
     var pixels: [][]Pixel = try allocator.alloc([]Pixel, height);
     for (0..pixels.len) |i| {
         pixels[i] = try allocator.alloc(Pixel, width);
@@ -19,7 +19,7 @@ pub fn parse_pixels(reader: fs.File.Reader, height: u32, width: u32, bit_count: 
     for (0..height) |y| {
         for (0..width) |x| {
             if (has_alpha) {
-                const raw_pixel: [4]u8 = try reader.readBytesNoEof(4);
+                const raw_pixel: [4]u8 = (try reader.takeArray(4)).*;
                 pixels[y][x].b = raw_pixel[0];
                 pixels[y][x].g = raw_pixel[1];
                 pixels[y][x].r = raw_pixel[2];
@@ -28,14 +28,14 @@ pub fn parse_pixels(reader: fs.File.Reader, height: u32, width: u32, bit_count: 
             else {
                 switch (bit_count) {
                     24 => {
-                        const raw_pixel: [3]u8 = try reader.readBytesNoEof(3);
+                        const raw_pixel: [3]u8 = (try reader.takeArray(3)).*;
                         pixels[y][x].b = raw_pixel[0];
                         pixels[y][x].g = raw_pixel[1];
                         pixels[y][x].r = raw_pixel[2];
                         pixels[y][x].a = null;
                     },
                     32 => {
-                        const raw_pixel: [4]u8 = try reader.readBytesNoEof(4);
+                        const raw_pixel: [4]u8 = (try reader.takeArray(4)).*;
                         pixels[y][x].b = raw_pixel[0];
                         pixels[y][x].g = raw_pixel[1];
                         pixels[y][x].r = raw_pixel[2];
@@ -45,7 +45,7 @@ pub fn parse_pixels(reader: fs.File.Reader, height: u32, width: u32, bit_count: 
                 }
             }
         }
-        _ = try reader.skipBytes(padding, .{});
+        _ = try reader.take(padding);
     }
 
     const len: usize = pixels.len / 2;

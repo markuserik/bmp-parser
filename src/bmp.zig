@@ -29,11 +29,14 @@ pub fn parse(file_path: []const u8) !bmp {
 
     const file: fs.File = try fs.cwd().openFile(file_path, .{});
     defer file.close();
-    var reader: fs.File.Reader = file.reader();
+
+    var buffer: [1024]u8 = undefined;
+    var reader_wrapper = file.reader(&buffer);
+    const reader: *std.io.Reader = &reader_wrapper.interface;
 
     const file_header: File_header = try File_header.parse_file_header(reader);
 
-    const dib_header_type: DIB_header.DIB_header_type = @enumFromInt(try reader.readInt(u32, endianness));
+    const dib_header_type: DIB_header.DIB_header_type = @enumFromInt(try reader.takeInt(u32, endianness));
     const dib_header: DIB_header = try DIB_header.parse_dib_header(reader, dib_header_type);
 
     var extra_bit_masks: ?Extra_bit_masks = null;
@@ -67,7 +70,7 @@ pub fn parse(file_path: []const u8) !bmp {
     }
 
     const gap1: u32 = file_header.offset - (14 + @intFromEnum(dib_header_type));
-    try reader.skipBytes(gap1, .{});
+    _ = try reader.take(gap1);
     
     const has_alpha: bool = check_alpha(compression_type, bit_count, alpha_mask);
     

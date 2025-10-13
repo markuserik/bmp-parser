@@ -10,18 +10,18 @@ g: u32,
 b: u32,
 a: ?u32 = null,
 
-pub fn parse_extra_bit_masks(reader: fs.File.Reader, has_alpha: bool) !Extra_bit_masks {
+pub fn parse_extra_bit_masks(reader: *std.io.Reader, has_alpha: bool) !Extra_bit_masks {
     if (!has_alpha) {
         return Extra_bit_masks{
-            .r = try reader.readInt(u32, endianness),
-            .g = try reader.readInt(u32, endianness),
-            .b = try reader.readInt(u32, endianness)
+            .r = try reader.takeInt(u32, endianness),
+            .g = try reader.takeInt(u32, endianness),
+            .b = try reader.takeInt(u32, endianness)
         };
     }
     return Extra_bit_masks{
-        .r = try reader.readInt(u32, endianness),
-        .g = try reader.readInt(u32, endianness),
-        .b = try reader.readInt(u32, endianness),
-        .a = try reader.readInt(u32, endianness)
+        .r = try reader.takeInt(u32, endianness),
+        .g = try reader.takeInt(u32, endianness),
+        .b = try reader.takeInt(u32, endianness),
+        .a = try reader.takeInt(u32, endianness)
     };
 }

@@ -145,7 +145,7 @@ pub const DIB_header = union(DIB_header_type) {
         LCS_GM_IMAGES = 4
     };
     
-    pub fn parse_dib_header(reader: fs.File.Reader, dib_header_type: DIB_header_type) !DIB_header {
+    pub fn parse_dib_header(reader: *std.io.Reader, dib_header_type: DIB_header_type) !DIB_header {
         switch (dib_header_type) {
             DIB_header_type.BITMAPCOREHEADER => return parse_BITMAPCOREHEADER(reader),
             DIB_header_type.BITMAPINFOHEADER => return parse_BITMAPINFOHEADER(reader),
@@ -158,115 +158,115 @@ pub const DIB_header = union(DIB_header_type) {
         }
     }
     
-    fn parse_BITMAPCOREHEADER(reader: fs.File.Reader) !DIB_header {
+    fn parse_BITMAPCOREHEADER(reader: *std.io.Reader) !DIB_header {
         return DIB_header{ .BITMAPCOREHEADER = DIB_header_BITMAPCOREHEADER{
             .dib_header_size = @intFromEnum(DIB_header_type.BITMAPCOREHEADER),
-            .width = try reader.readInt(u16, endianness),
-            .height = try reader.readInt(u16, endianness),
-            .planes = try reader.readInt(u16, endianness),
-            .bit_count = try reader.readInt(u16, endianness)
+            .width = try reader.takeInt(u16, endianness),
+            .height = try reader.takeInt(u16, endianness),
+            .planes = try reader.takeInt(u16, endianness),
+            .bit_count = try reader.takeInt(u16, endianness)
         }};
     }
     
-    fn parse_BITMAPINFOHEADER(reader: fs.File.Reader) !DIB_header {
+    fn parse_BITMAPINFOHEADER(reader: *std.io.Reader) !DIB_header {
         return DIB_header{ .BITMAPINFOHEADER = DIB_header_BITMAPINFOHEADER{
             .dib_header_size = @intFromEnum(DIB_header_type.BITMAPINFOHEADER),
-            .width = try reader.readInt(u32, endianness),
-            .height = try reader.readInt(u32, endianness),
-            .planes = try reader.readInt(u16, endianness),
-            .bit_count = try reader.readInt(u16, endianness),
-            .compression_type = @enumFromInt(try reader.readInt(u32, endianness)),
-            .size_image = try reader.readInt(u32, endianness),
-            .xpelspermeter = try reader.readInt(u32, endianness),
-            .ypelspermeter = try reader.readInt(u32, endianness),
-            .clrused = try reader.readInt(u32, endianness),
-            .clrimportant = try reader.readInt(u32, endianness)
+            .width = try reader.takeInt(u32, endianness),
+            .height = try reader.takeInt(u32, endianness),
+            .planes = try reader.takeInt(u16, endianness),
+            .bit_count = try reader.takeInt(u16, endianness),
+            .compression_type = @enumFromInt(try reader.takeInt(u32, endianness)),
+            .size_image = try reader.takeInt(u32, endianness),
+            .xpelspermeter = try reader.takeInt(u32, endianness),
+            .ypelspermeter = try reader.takeInt(u32, endianness),
+            .clrused = try reader.takeInt(u32, endianness),
+            .clrimportant = try reader.takeInt(u32, endianness)
         }};
     }
     
-    fn parse_BITMAPV4HEADER(reader: fs.File.Reader) !DIB_header {
+    fn parse_BITMAPV4HEADER(reader: *std.io.Reader) !DIB_header {
         return DIB_header{ .BITMAPV4HEADER = DIB_header_BITMAPV4HEADER{
             .dib_header_size = @intFromEnum(DIB_header_type.BITMAPV4HEADER),
-            .width = try reader.readInt(u32, endianness),
-            .height = try reader.readInt(u32, endianness),
-            .planes = try reader.readInt(u16, endianness),
-            .bit_count = try reader.readInt(u16, endianness),
-            .compression_type = @enumFromInt(try reader.readInt(u32, endianness)),
-            .size_image = try reader.readInt(u32, endianness),
-            .xpelspermeter = try reader.readInt(u32, endianness),
-            .ypelspermeter = try reader.readInt(u32, endianness),
-            .clrused = try reader.readInt(u32, endianness),
-            .clrimportant = try reader.readInt(u32, endianness),
-            .redmask = try reader.readInt(u32, endianness),
-            .greenmask = try reader.readInt(u32, endianness),
-            .bluemask = try reader.readInt(u32, endianness),
-            .alpha_mask = try reader.readInt(u32, endianness),
-            .cs_type = @enumFromInt(try reader.readInt(u32, endianness)),
+            .width = try reader.takeInt(u32, endianness),
+            .height = try reader.takeInt(u32, endianness),
+            .planes = try reader.takeInt(u16, endianness),
+            .bit_count = try reader.takeInt(u16, endianness),
+            .compression_type = @enumFromInt(try reader.takeInt(u32, endianness)),
+            .size_image = try reader.takeInt(u32, endianness),
+            .xpelspermeter = try reader.takeInt(u32, endianness),
+            .ypelspermeter = try reader.takeInt(u32, endianness),
+            .clrused = try reader.takeInt(u32, endianness),
+            .clrimportant = try reader.takeInt(u32, endianness),
+            .redmask = try reader.takeInt(u32, endianness),
+            .greenmask = try reader.takeInt(u32, endianness),
+            .bluemask = try reader.takeInt(u32, endianness),
+            .alpha_mask = try reader.takeInt(u32, endianness),
+            .cs_type = @enumFromInt(try reader.takeInt(u32, endianness)),
             .endpoints = .{
                 .red = .{
-                    .x = try reader.readInt(u32, endianness),
-                    .y = try reader.readInt(u32, endianness),
-                    .z = try reader.readInt(u32, endianness)
+                    .x = try reader.takeInt(u32, endianness),
+                    .y = try reader.takeInt(u32, endianness),
+                    .z = try reader.takeInt(u32, endianness)
                 },
                 .green = .{
-                    .x = try reader.readInt(u32, endianness),
-                    .y = try reader.readInt(u32, endianness),
-                    .z = try reader.readInt(u32, endianness)
+                    .x = try reader.takeInt(u32, endianness),
+                    .y = try reader.takeInt(u32, endianness),
+                    .z = try reader.takeInt(u32, endianness)
                 },
                 .blue = .{
-                    .x = try reader.readInt(u32, endianness),
-                    .y = try reader.readInt(u32, endianness),
-                    .z = try reader.readInt(u32, endianness)
+                    .x = try reader.takeInt(u32, endianness),
+                    .y = try reader.takeInt(u32, endianness),
+                    .z = try reader.takeInt(u32, endianness)
                 }
             },
-            .gamma_red = try reader.readInt(u32, endianness),
-            .gamma_green = try reader.readInt(u32, endianness),
-            .gamma_blue = try reader.readInt(u32, endianness),
+            .gamma_red = try reader.takeInt(u32, endianness),
+            .gamma_green = try reader.takeInt(u32, endianness),
+            .gamma_blue = try reader.takeInt(u32, endianness),
         }};
     }
     
-    fn parse_BITMAPV5HEADER(reader: fs.File.Reader) !DIB_header {
+    fn parse_BITMAPV5HEADER(reader: *std.io.Reader) !DIB_header {
         return DIB_header{ .BITMAPV5HEADER = DIB_header_BITMAPV5HEADER{
             .dib_header_size = @intFromEnum(DIB_header_type.BITMAPV5HEADER),
-            .width = try reader.readInt(u32, endianness),
-            .height = try reader.readInt(u32, endianness),
-            .planes = try reader.readInt(u16, endianness),
-            .bit_count = try reader.readInt(u16, endianness),
-            .compression_type = @enumFromInt(try reader.readInt(u32, endianness)),
-            .size_image = try reader.readInt(u32, endianness),
-            .xpelspermeter = try reader.readInt(u32, endianness),
-            .ypelspermeter = try reader.readInt(u32, endianness),
-            .clrused = try reader.readInt(u32, endianness),
-            .clrimportant = try reader.readInt(u32, endianness),
-            .redmask = try reader.readInt(u32, endianness),
-            .greenmask = try reader.readInt(u32, endianness),
-            .bluemask = try reader.readInt(u32, endianness),
-            .alpha_mask = try reader.readInt(u32, endianness),
-            .cs_type = @enumFromInt(try reader.readInt(u32, endianness)),
+            .width = try reader.takeInt(u32, endianness),
+            .height = try reader.takeInt(u32, endianness),
+            .planes = try reader.takeInt(u16, endianness),
+            .bit_count = try reader.takeInt(u16, endianness),
+            .compression_type = @enumFromInt(try reader.takeInt(u32, endianness)),
+            .size_image = try reader.takeInt(u32, endianness),
+            .xpelspermeter = try reader.takeInt(u32, endianness),
+            .ypelspermeter = try reader.takeInt(u32, endianness),
+            .clrused = try reader.takeInt(u32, endianness),
+            .clrimportant = try reader.takeInt(u32, endianness),
+            .redmask = try reader.takeInt(u32, endianness),
+            .greenmask = try reader.takeInt(u32, endianness),
+            .bluemask = try reader.takeInt(u32, endianness),
+            .alpha_mask = try reader.takeInt(u32, endianness),
+            .cs_type = @enumFromInt(try reader.takeInt(u32, endianness)),
             .endpoints = .{
                 .red = .{
-                    .x = try reader.readInt(u32, endianness),
-                    .y = try reader.readInt(u32, endianness),
-                    .z = try reader.readInt(u32, endianness)
+                    .x = try reader.takeInt(u32, endianness),
+                    .y = try reader.takeInt(u32, endianness),
+                    .z = try reader.takeInt(u32, endianness)
                 },
                 .green = .{
-                    .x = try reader.readInt(u32, endianness),
-                    .y = try reader.readInt(u32, endianness),
-                    .z = try reader.readInt(u32, endianness)
+                    .x = try reader.takeInt(u32, endianness),
+                    .y = try reader.takeInt(u32, endianness),
+                    .z = try reader.takeInt(u32, endianness)
                 },
                 .blue = .{
-                    .x = try reader.readInt(u32, endianness),
-                    .y = try reader.readInt(u32, endianness),
-                    .z = try reader.readInt(u32, endianness)
+                    .x = try reader.takeInt(u32, endianness),
+                    .y = try reader.takeInt(u32, endianness),
+                    .z = try reader.takeInt(u32, endianness)
                 }
             },
-            .gamma_red = try reader.readInt(u32, endianness),
-            .gamma_green = try reader.readInt(u32, endianness),
-            .gamma_blue = try reader.readInt(u32, endianness),
-            .rendering_intent = @enumFromInt(try reader.readInt(u32, endianness)),
-            .profile_data = try reader.readInt(u32, endianness),
-            .profile_size = try reader.readInt(u32, endianness),
-            .reserved = try reader.readInt(u32, endianness)
+            .gamma_red = try reader.takeInt(u32, endianness),
+            .gamma_green = try reader.takeInt(u32, endianness),
+            .gamma_blue = try reader.takeInt(u32, endianness),
+            .rendering_intent = @enumFromInt(try reader.takeInt(u32, endianness)),
+            .profile_data = try reader.takeInt(u32, endianness),
+            .profile_size = try reader.takeInt(u32, endianness),
+            .reserved = try reader.takeInt(u32, endianness)
         }};
     }
 };
