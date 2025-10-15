@@ -1,6 +1,6 @@
 .{
     .name = .bmp_parser,
-    .version = "0.0.0",
+    .version = "0.1.0",
     .fingerprint = 0x7c09b0d6e719508a,
     .minimum_zig_version = "0.15.1",
     .paths = .{

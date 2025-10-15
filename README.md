@@ -6,7 +6,7 @@ A zig parsing library for .bmp files.
 
 Add it to your project via this command
 ```sh
-zig fetch --save=bmp_parser git+https://github.com/markuserik/bmp-parser
+zig fetch --save=bmp_parser https://github.com/markuserik/bmp-parser/archive/0.1.0.tar.gz
 ```
 
 Then add these lines to your build.zig
