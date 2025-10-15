@@ -6,20 +6,13 @@ const Extra_bit_masks = @This();
 r: u32,
 g: u32,
 b: u32,
-a: ?u32 = null,
+a: ?u32,
 
 pub fn parseExtraBitMasks(reader: *std.io.Reader, has_alpha: bool, endianness: std.builtin.Endian) !Extra_bit_masks {
-    if (!has_alpha) {
-        return Extra_bit_masks{
-            .r = try reader.takeInt(u32, endianness),
-            .g = try reader.takeInt(u32, endianness),
-            .b = try reader.takeInt(u32, endianness)
-        };
-    }
     return Extra_bit_masks{
         .r = try reader.takeInt(u32, endianness),
         .g = try reader.takeInt(u32, endianness),
         .b = try reader.takeInt(u32, endianness),
-        .a = try reader.takeInt(u32, endianness)
+        .a = if (!has_alpha) null else try reader.takeInt(u32, endianness)
     };
 }
