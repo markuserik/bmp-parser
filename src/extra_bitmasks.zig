@@ -8,7 +8,7 @@ g: u32,
 b: u32,
 a: ?u32 = null,
 
-pub fn parse_extra_bit_masks(reader: *std.io.Reader, has_alpha: bool, endianness: std.builtin.Endian) !Extra_bit_masks {
+pub fn parseExtraBitMasks(reader: *std.io.Reader, has_alpha: bool, endianness: std.builtin.Endian) !Extra_bit_masks {
     if (!has_alpha) {
         return Extra_bit_masks{
             .r = try reader.takeInt(u32, endianness),

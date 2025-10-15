@@ -35,20 +35,20 @@ pub fn parse(file_path: []const u8) !bmp {
     var reader_wrapper = file.reader(&buffer);
     const reader: *std.io.Reader = &reader_wrapper.interface;
 
-    const file_header: File_header = try File_header.parse_file_header(reader, endianness);
+    const file_header: File_header = try File_header.parseFileHeader(reader, endianness);
 
     const dib_header_type: DIB_header.DIB_header_type = @enumFromInt(try reader.takeInt(u32, endianness));
     const dib_common: DIB_header.common = try DIB_header.common.parse(reader, dib_header_type, endianness);
-    const dib_header: DIB_header = try DIB_header.parse_dib_header(reader, dib_header_type, endianness);
+    const dib_header: DIB_header = try DIB_header.parseDibHeader(reader, dib_header_type, endianness);
 
     var extra_bit_masks: ?Extra_bit_masks = null;
 
     if (dib_header == DIB_header.DIB_header_type.BITMAPINFOHEADER) {
         if (dib_header.BITMAPINFOHEADER.compression_type == DIB_header.DIB_compression_type.BI_BITFIELDS) {
-            extra_bit_masks = try Extra_bit_masks.parse_extra_bit_masks(reader, false, endianness);
+            extra_bit_masks = try Extra_bit_masks.parseExtraBitMasks(reader, false, endianness);
         }
         else if (dib_header.BITMAPINFOHEADER.compression_type == DIB_header.DIB_compression_type.BI_ALPHABITFIELDS) {
-            extra_bit_masks = try Extra_bit_masks.parse_extra_bit_masks(reader, true, endianness);
+            extra_bit_masks = try Extra_bit_masks.parseExtraBitMasks(reader, true, endianness);
         }
     }
 
@@ -71,9 +71,9 @@ pub fn parse(file_path: []const u8) !bmp {
     const gap1: u32 = file_header.offset - (14 + @intFromEnum(dib_header_type));
     _ = try reader.take(gap1);
     
-    const has_alpha: bool = check_alpha(compression_type, dib_common.bit_count, alpha_mask);
+    const has_alpha: bool = checkAlpha(compression_type, dib_common.bit_count, alpha_mask);
     
-    const pixels: [][]Pixel = try Pixel.parse_pixels(reader, dib_common.height, dib_common.width, dib_common.bit_count, has_alpha, allocator);
+    const pixels: [][]Pixel = try Pixel.parsePixels(reader, dib_common.height, dib_common.width, dib_common.bit_count, has_alpha, allocator);
 
     return bmp{
         .file_header = file_header,
@@ -85,7 +85,7 @@ pub fn parse(file_path: []const u8) !bmp {
     };
 }
 
-fn check_alpha(compression_type: ?DIB_header.DIB_compression_type, bit_count: u16, alpha_mask: u32) bool {
+fn checkAlpha(compression_type: ?DIB_header.DIB_compression_type, bit_count: u16, alpha_mask: u32) bool {
     if (compression_type == null) return false;
     if (bit_count != 32) return false;
     if (compression_type == DIB_header.DIB_compression_type.BI_RGB) return true;

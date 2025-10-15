@@ -9,7 +9,7 @@ reserved1: [2]u8,
 reserved2: [2]u8,
 offset: u32,
 
-pub fn parse_file_header(reader: *std.io.Reader, endianness: std.builtin.Endian) !File_header {
+pub fn parseFileHeader(reader: *std.io.Reader, endianness: std.builtin.Endian) !File_header {
     return File_header{
         .identifier = (try reader.takeArray(2)).*,
         .file_size = try reader.takeInt(u32, endianness),

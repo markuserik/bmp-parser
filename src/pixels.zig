@@ -8,7 +8,7 @@ g: u8,
 b: u8,
 a: ?u8,
 
-pub fn parse_pixels(reader: *std.io.Reader, height: u32, width: u32, bit_count: u16, has_alpha: bool, allocator: std.mem.Allocator) ![][]Pixel {
+pub fn parsePixels(reader: *std.io.Reader, height: u32, width: u32, bit_count: u16, has_alpha: bool, allocator: std.mem.Allocator) ![][]Pixel {
     var pixels: [][]Pixel = try allocator.alloc([]Pixel, height);
     for (0..pixels.len) |i| {
         pixels[i] = try allocator.alloc(Pixel, width);
