@@ -1,8 +1,6 @@
 const std = @import("std");
 const fs = std.fs;
 
-const endianness: std.builtin.Endian = @import("bmp.zig").endianness;
-
 const Extra_bit_masks = @This();
 
 r: u32,
@@ -10,7 +8,7 @@ g: u32,
 b: u32,
 a: ?u32 = null,
 
-pub fn parse_extra_bit_masks(reader: *std.io.Reader, has_alpha: bool) !Extra_bit_masks {
+pub fn parse_extra_bit_masks(reader: *std.io.Reader, has_alpha: bool, endianness: std.builtin.Endian) !Extra_bit_masks {
     if (!has_alpha) {
         return Extra_bit_masks{
             .r = try reader.takeInt(u32, endianness),

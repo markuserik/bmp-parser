@@ -35,20 +35,20 @@ pub fn parse(file_path: []const u8) !bmp {
     var reader_wrapper = file.reader(&buffer);
     const reader: *std.io.Reader = &reader_wrapper.interface;
 
-    const file_header: File_header = try File_header.parse_file_header(reader);
+    const file_header: File_header = try File_header.parse_file_header(reader, endianness);
 
     const dib_header_type: DIB_header.DIB_header_type = @enumFromInt(try reader.takeInt(u32, endianness));
-    const dib_common: DIB_header.common = try DIB_header.common.parse(reader, dib_header_type);
-    const dib_header: DIB_header = try DIB_header.parse_dib_header(reader, dib_header_type);
+    const dib_common: DIB_header.common = try DIB_header.common.parse(reader, dib_header_type, endianness);
+    const dib_header: DIB_header = try DIB_header.parse_dib_header(reader, dib_header_type, endianness);
 
     var extra_bit_masks: ?Extra_bit_masks = null;
 
     if (dib_header == DIB_header.DIB_header_type.BITMAPINFOHEADER) {
         if (dib_header.BITMAPINFOHEADER.compression_type == DIB_header.DIB_compression_type.BI_BITFIELDS) {
-            extra_bit_masks = try Extra_bit_masks.parse_extra_bit_masks(reader, false);
+            extra_bit_masks = try Extra_bit_masks.parse_extra_bit_masks(reader, false, endianness);
         }
         else if (dib_header.BITMAPINFOHEADER.compression_type == DIB_header.DIB_compression_type.BI_ALPHABITFIELDS) {
-            extra_bit_masks = try Extra_bit_masks.parse_extra_bit_masks(reader, true);
+            extra_bit_masks = try Extra_bit_masks.parse_extra_bit_masks(reader, true, endianness);
         }
     }
 
