@@ -21,7 +21,7 @@ const std = @import("std");
 const bmp_parser = @import("bmp_parser");
 
 pub fn main() !void {
-    const bmp: bmp_parser.bmp = try bmp_parser.parseFileWithPath("images/test.bmp");
+    const bmp: bmp_parser.bmp = try bmp_parser.parseFileFromPath("images/test.bmp");
     defer bmp.deinit();
 
     std.debug.print("Height: {}, Width: {}\n", .{bmp.dib_common.height, bmp.dib_common.width});

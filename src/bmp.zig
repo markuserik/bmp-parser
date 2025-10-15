@@ -24,7 +24,7 @@ pub const bmp = struct {
 
 pub const endianness: std.builtin.Endian = std.builtin.Endian.little;
 
-pub fn parseFileWithPath(file_path: []const u8) !bmp {
+pub fn parseFileFromPath(file_path: []const u8) !bmp {
     const file: fs.File = try fs.cwd().openFile(file_path, .{});
     defer file.close();
 
@@ -32,20 +32,29 @@ pub fn parseFileWithPath(file_path: []const u8) !bmp {
 }
 
 pub fn parseFile(file: fs.File) !bmp {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator: std.mem.Allocator = gpa.allocator();
+
+    const raw_file: []u8 = try allocator.alloc(u8, (try file.stat()).size);
+    _ = try file.read(raw_file);
+    defer allocator.free(raw_file);
+
+    return parseRaw(raw_file);
+}
+
+pub fn parseRaw(raw_file: []u8) !bmp {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     const allocator: std.mem.Allocator = arena.allocator();
 
-    var buffer: [1024]u8 = undefined;
-    var reader_wrapper = file.reader(&buffer);
-    const reader: *std.io.Reader = &reader_wrapper.interface;
+    var reader: std.io.Reader = std.io.Reader.fixed(raw_file);
 
-    const file_header: File_header = try File_header.parseFileHeader(reader, endianness);
+    const file_header: File_header = try File_header.parseFileHeader(&reader, endianness);
 
     const dib_header_type: DIB_header.DIB_header_type = @enumFromInt(try reader.takeInt(u32, endianness));
-    const dib_common: DIB_header.Common = try DIB_header.Common.parse(reader, dib_header_type, endianness);
-    const dib_header: DIB_header = try DIB_header.parseDibHeader(reader, dib_header_type, endianness);
+    const dib_common: DIB_header.Common = try DIB_header.Common.parse(&reader, dib_header_type, endianness);
+    const dib_header: DIB_header = try DIB_header.parseDibHeader(&reader, dib_header_type, endianness);
 
-    const extra_bit_masks: ?Extra_bit_masks = try getExtraBitMasks(reader, dib_header);
+    const extra_bit_masks: ?Extra_bit_masks = try getExtraBitMasks(&reader, dib_header);
 
     var alpha_mask: u32 = 0;
     var compression_type: ?DIB_header.DIB_compression_type = null;
@@ -68,7 +77,7 @@ pub fn parseFile(file: fs.File) !bmp {
     
     const has_alpha: bool = checkAlpha(compression_type, dib_common.bit_count, alpha_mask);
     
-    const pixels: [][]Pixel = try Pixel.parsePixels(reader, dib_common.height, dib_common.width, dib_common.bit_count, has_alpha, allocator);
+    const pixels: [][]Pixel = try Pixel.parsePixels(&reader, dib_common.height, dib_common.width, dib_common.bit_count, has_alpha, allocator);
 
     return bmp{
         .file_header = file_header,
