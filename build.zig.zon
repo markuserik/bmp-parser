@@ -2,7 +2,7 @@
     .name = .bmp_parser,
     .version = "0.0.0",
     .fingerprint = 0x7c09b0d6e719508a,
-    .minimum_zig_version = "0.14.1",
+    .minimum_zig_version = "0.15.1",
     .paths = .{
         "build.zig",
         "build.zig.zon",
