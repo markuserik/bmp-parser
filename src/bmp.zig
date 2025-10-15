@@ -11,6 +11,7 @@ pub const Pixel = @import("pixels.zig");
 
 pub const bmp = struct {
     file_header: File_header,
+    dib_common: DIB_header.common,
     dib_header: DIB_header,
     extra_bit_masks: ?Extra_bit_masks,
     pixels: [][]Pixel,
@@ -37,6 +38,7 @@ pub fn parse(file_path: []const u8) !bmp {
     const file_header: File_header = try File_header.parse_file_header(reader);
 
     const dib_header_type: DIB_header.DIB_header_type = @enumFromInt(try reader.takeInt(u32, endianness));
+    const dib_common: DIB_header.common = try DIB_header.common.parse(reader, dib_header_type);
     const dib_header: DIB_header = try DIB_header.parse_dib_header(reader, dib_header_type);
 
     var extra_bit_masks: ?Extra_bit_masks = null;
@@ -50,21 +52,18 @@ pub fn parse(file_path: []const u8) !bmp {
         }
     }
 
-    var height: u32 = 0;
-    var width: u32 = 0;
-    var bit_count: u16 = 0;
     var alpha_mask: u32 = 0;
     var compression_type: ?DIB_header.DIB_compression_type = null;
     
     switch (dib_header) {
-        DIB_header.BITMAPCOREHEADER => |header| { height = @as(u32, header.height); width = @as(u32, header.width); bit_count = header.bit_count; },
-        DIB_header.BITMAPINFOHEADER => |header| { height = header.height; width = header.width; bit_count = header.bit_count; compression_type = header.compression_type; },
-        DIB_header.BITMAPV4HEADER => |header| { height = header.height; width = header.width; bit_count = header.bit_count; alpha_mask = header.alpha_mask; compression_type = header.compression_type; },
-        DIB_header.BITMAPV5HEADER => |header| { height = header.height; width = header.width; bit_count = header.bit_count; alpha_mask = header.alpha_mask; compression_type = header.compression_type; },
+        DIB_header.BITMAPCOREHEADER => {},
+        DIB_header.BITMAPINFOHEADER => |header| { compression_type = header.compression_type; },
+        DIB_header.BITMAPV4HEADER => |header| { alpha_mask = header.alpha_mask; compression_type = header.compression_type; },
+        DIB_header.BITMAPV5HEADER => |header| { alpha_mask = header.alpha_mask; compression_type = header.compression_type; },
         else => unreachable
     }
 
-    if (bit_count <= 8) {
+    if (dib_common.bit_count <= 8) {
         std.debug.print("Color table not implemented, bit counts of 8 or lower not supported\n", .{});
         unreachable;
     }
@@ -72,19 +71,19 @@ pub fn parse(file_path: []const u8) !bmp {
     const gap1: u32 = file_header.offset - (14 + @intFromEnum(dib_header_type));
     _ = try reader.take(gap1);
     
-    const has_alpha: bool = check_alpha(compression_type, bit_count, alpha_mask);
+    const has_alpha: bool = check_alpha(compression_type, dib_common.bit_count, alpha_mask);
     
-    const pixels: [][]Pixel = try Pixel.parse_pixels(reader, height, width, bit_count, has_alpha, allocator);
+    const pixels: [][]Pixel = try Pixel.parse_pixels(reader, dib_common.height, dib_common.width, dib_common.bit_count, has_alpha, allocator);
 
     return bmp{
         .file_header = file_header,
+        .dib_common = dib_common,
         .dib_header = dib_header,
         .extra_bit_masks = extra_bit_masks,
         .pixels = pixels,
         .arena = arena
     };
 }
-
 
 fn check_alpha(compression_type: ?DIB_header.DIB_compression_type, bit_count: u16, alpha_mask: u32) bool {
     if (compression_type == null) return false;
