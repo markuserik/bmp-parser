@@ -24,12 +24,16 @@ pub const bmp = struct {
 
 pub const endianness: std.builtin.Endian = std.builtin.Endian.little;
 
-pub fn parse(file_path: []const u8) !bmp {
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    const allocator: std.mem.Allocator = arena.allocator();
-
+pub fn parseFileWithPath(file_path: []const u8) !bmp {
     const file: fs.File = try fs.cwd().openFile(file_path, .{});
     defer file.close();
+
+    return try parseFile(file);
+}
+
+pub fn parseFile(file: fs.File) !bmp {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const allocator: std.mem.Allocator = arena.allocator();
 
     var buffer: [1024]u8 = undefined;
     var reader_wrapper = file.reader(&buffer);
