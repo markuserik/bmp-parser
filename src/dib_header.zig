@@ -123,15 +123,15 @@ pub const DIB_header = union(DIB_header_type) {
         LCS_GM_IMAGES = 4
     };
 
-    pub const common = struct {
+    pub const Common = struct {
         dib_header_size: u32,
         width: u32,
         height: u32,
         planes: u16,
         bit_count: u16,
         
-        pub fn parse(reader: *std.io.Reader, dib_header_type: DIB_header_type, endianness: std.builtin.Endian) !common {
-            return common{
+        pub fn parse(reader: *std.io.Reader, dib_header_type: DIB_header_type, endianness: std.builtin.Endian) !Common {
+            return Common{
                 .dib_header_size = @intFromEnum(dib_header_type),
                 .width = try reader.takeInt(u32, endianness),
                 .height = try reader.takeInt(u32, endianness),

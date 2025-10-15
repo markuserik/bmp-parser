@@ -11,7 +11,7 @@ pub const Pixel = @import("pixels.zig");
 
 pub const bmp = struct {
     file_header: File_header,
-    dib_common: DIB_header.common,
+    dib_common: DIB_header.Common,
     dib_header: DIB_header,
     extra_bit_masks: ?Extra_bit_masks,
     pixels: [][]Pixel,
@@ -38,7 +38,7 @@ pub fn parse(file_path: []const u8) !bmp {
     const file_header: File_header = try File_header.parseFileHeader(reader, endianness);
 
     const dib_header_type: DIB_header.DIB_header_type = @enumFromInt(try reader.takeInt(u32, endianness));
-    const dib_common: DIB_header.common = try DIB_header.common.parse(reader, dib_header_type, endianness);
+    const dib_common: DIB_header.Common = try DIB_header.Common.parse(reader, dib_header_type, endianness);
     const dib_header: DIB_header = try DIB_header.parseDibHeader(reader, dib_header_type, endianness);
 
     const extra_bit_masks: ?Extra_bit_masks = try getExtraBitMasks(reader, dib_header);
