@@ -2,6 +2,19 @@
 
 A zig parsing library for .bmp files.
 
+# Supported functionality
+
+This library currently only supports the following DIB header types:
+```
+BITMAPCOREHEADER 
+BITMAPINFOHEADER
+BITMAPV4HEADER
+BITMAPV5HEADER
+```
+
+Color table has also not been implemented so bit counts of 8 or lower is not
+supported
+
 # Usage
 
 Add it to your project via this command
