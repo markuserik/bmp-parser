@@ -9,7 +9,7 @@ pub const Extra_bit_masks = @import("extra_bitmasks.zig");
 
 pub const Pixel = @import("pixels.zig");
 
-pub const bmp = struct {
+pub const Bmp = struct {
     file_header: File_header,
     dib_common: DIB_header.Common,
     dib_header: DIB_header,
@@ -17,21 +17,21 @@ pub const bmp = struct {
     pixels: [][]Pixel,
     arena: std.heap.ArenaAllocator,
 
-    pub fn deinit(self: *const bmp) void {
+    pub fn deinit(self: *const Bmp) void {
         self.arena.deinit();
     }
 };
 
 pub const endianness: std.builtin.Endian = std.builtin.Endian.little;
 
-pub fn parseFileFromPath(file_path: []const u8) !bmp {
+pub fn parseFileFromPath(file_path: []const u8) !Bmp {
     const file: fs.File = try fs.cwd().openFile(file_path, .{});
     defer file.close();
 
     return try parseFile(file);
 }
 
-pub fn parseFile(file: fs.File) !bmp {
+pub fn parseFile(file: fs.File) !Bmp {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator: std.mem.Allocator = gpa.allocator();
 
@@ -42,7 +42,7 @@ pub fn parseFile(file: fs.File) !bmp {
     return parseRaw(raw_file);
 }
 
-pub fn parseRaw(raw_file: []u8) !bmp {
+pub fn parseRaw(raw_file: []u8) !Bmp {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     const allocator: std.mem.Allocator = arena.allocator();
 
@@ -79,7 +79,7 @@ pub fn parseRaw(raw_file: []u8) !bmp {
     
     const pixels: [][]Pixel = try Pixel.parsePixels(&reader, dib_common.height, dib_common.width, dib_common.bit_count, has_alpha, allocator);
 
-    return bmp{
+    return Bmp{
         .file_header = file_header,
         .dib_common = dib_common,
         .dib_header = dib_header,
