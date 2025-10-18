@@ -41,7 +41,7 @@ pub fn parsePixels(reader: *std.io.Reader, height: u32, width: u32, bit_count: u
                         pixels[y][x].r = raw_pixel[2];
                         pixels[y][x].a = null;
                     },
-                    else => { std.debug.print("Bit count not supported\n", .{}); unreachable; }
+                    else => return error.BitCountUnsupported
                 }
             }
         }
