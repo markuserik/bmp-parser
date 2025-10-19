@@ -62,12 +62,12 @@ pub fn parseRaw(raw_file: []u8) !Bmp {
         DIBheader.BITMAPINFOHEADER => |header| { compression_type = header.compression_type; },
         DIBheader.BITMAPV4HEADER => |header| { alpha_mask = header.alpha_mask; compression_type = header.compression_type; },
         DIBheader.BITMAPV5HEADER => |header| { alpha_mask = header.alpha_mask; compression_type = header.compression_type; },
-        else => unreachable
+        else => return error.DIBHeaderTypeNotImplemented
     }
 
     if (dib_common.bit_count <= 8) {
         std.debug.print("Color table not implemented, bit counts of 8 or lower not supported\n", .{});
-        unreachable;
+        return error.ColorTableNotImplemented;
     }
 
     const gap1: u32 = file_header.offset - (14 + @intFromEnum(dib_header_type));
