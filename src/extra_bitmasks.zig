@@ -1,15 +1,15 @@
 const std = @import("std");
 const fs = std.fs;
 
-const Extra_bit_masks = @This();
+const ExtraBitmasks = @This();
 
 r: u32,
 g: u32,
 b: u32,
 a: ?u32,
 
-pub fn parseExtraBitMasks(reader: *std.io.Reader, has_alpha: bool, endianness: std.builtin.Endian) !Extra_bit_masks {
-    return Extra_bit_masks{
+pub fn parseExtraBitmasks(reader: *std.io.Reader, has_alpha: bool, endianness: std.builtin.Endian) !ExtraBitmasks {
+    return ExtraBitmasks{
         .r = try reader.takeInt(u32, endianness),
         .g = try reader.takeInt(u32, endianness),
         .b = try reader.takeInt(u32, endianness),

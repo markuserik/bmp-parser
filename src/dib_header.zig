@@ -1,36 +1,36 @@
 const std = @import("std");
 const fs = std.fs;
 
-pub const DIB_header = union(DIB_header_type) {
-    BITMAPCOREHEADER: DIB_header_BITMAPCOREHEADER,
-    OS22XBITMAPHEADER_16: DIB_header_OS22XBITMAPHEADER_16,
-    BITMAPINFOHEADER: DIB_header_BITMAPINFOHEADER,
-    BITMAPV2INFOHEADER: DIB_header_BITMAPV2INFOHEADER,
-    BITMAPV3INFOHEADER: DIB_header_BITMAPV3INFOHEADER,
-    OS22XBITMAPHEADER_64: DIB_header_OS22XBITMAPHEADER_64,
-    BITMAPV4HEADER: DIB_header_BITMAPV4HEADER,
-    BITMAPV5HEADER: DIB_header_BITMAPV5HEADER,
+pub const DIBheader = union(DIBheaderType) {
+    BITMAPCOREHEADER: DIBheader_BITMAPCOREHEADER,
+    OS22XBITMAPHEADER_16: DIBheader_OS22XBITMAPHEADER_16,
+    BITMAPINFOHEADER: DIBheader_BITMAPINFOHEADER,
+    BITMAPV2INFOHEADER: DIBheader_BITMAPV2INFOHEADER,
+    BITMAPV3INFOHEADER: DIBheader_BITMAPV3INFOHEADER,
+    OS22XBITMAPHEADER_64: DIBheader_OS22XBITMAPHEADER_64,
+    BITMAPV4HEADER: DIBheader_BITMAPV4HEADER,
+    BITMAPV5HEADER: DIBheader_BITMAPV5HEADER,
 
-    pub const DIB_header_BITMAPCOREHEADER = struct {
+    pub const DIBheader_BITMAPCOREHEADER = struct {
     };
-    pub const DIB_header_OS22XBITMAPHEADER_16 = struct {
+    pub const DIBheader_OS22XBITMAPHEADER_16 = struct {
     };
-    pub const DIB_header_BITMAPINFOHEADER = struct {
-        compression_type: DIB_compression_type,
+    pub const DIBheader_BITMAPINFOHEADER = struct {
+        compression_type: DIBcompressionType,
         size_image: u32,
         xpelspermeter: u32,
         ypelspermeter: u32,
         clrused: u32,
         clrimportant: u32
     };
-    pub const DIB_header_BITMAPV2INFOHEADER = struct {
+    pub const DIBheader_BITMAPV2INFOHEADER = struct {
     };
-    pub const DIB_header_BITMAPV3INFOHEADER = struct {
+    pub const DIBheader_BITMAPV3INFOHEADER = struct {
     };
-    pub const DIB_header_OS22XBITMAPHEADER_64 = struct {
+    pub const DIBheader_OS22XBITMAPHEADER_64 = struct {
     };
-    pub const DIB_header_BITMAPV4HEADER = struct {
-        compression_type: DIB_compression_type,
+    pub const DIBheader_BITMAPV4HEADER = struct {
+        compression_type: DIBcompressionType,
         size_image: u32,
         xpelspermeter: u32,
         ypelspermeter: u32,
@@ -46,8 +46,8 @@ pub const DIB_header = union(DIB_header_type) {
         gamma_green: u32,
         gamma_blue: u32
     };
-    pub const DIB_header_BITMAPV5HEADER = struct {
-        compression_type: DIB_compression_type,
+    pub const DIBheader_BITMAPV5HEADER = struct {
+        compression_type: DIBcompressionType,
         size_image: u32,
         xpelspermeter: u32,
         ypelspermeter: u32,
@@ -72,7 +72,7 @@ pub const DIB_header = union(DIB_header_type) {
     // least for now.
     // Will leave the rest in the enum so that they can be recognized despite not
     // being parsable.
-    pub const DIB_header_type = enum(u32) {
+    pub const DIBheaderType = enum(u32) {
         BITMAPCOREHEADER = 12,
         OS22XBITMAPHEADER_16 = 16,
         BITMAPINFOHEADER = 40,
@@ -83,7 +83,7 @@ pub const DIB_header = union(DIB_header_type) {
         BITMAPV5HEADER = 124
     };
     
-    pub const DIB_compression_type = enum(u32) {
+    pub const DIBcompressionType = enum(u32) {
         BI_RGB = 0,
         BI_RLE8 = 1,
         BI_RLE4 = 2,
@@ -130,7 +130,7 @@ pub const DIB_header = union(DIB_header_type) {
         planes: u16,
         bit_count: u16,
         
-        pub fn parse(reader: *std.io.Reader, dib_header_type: DIB_header_type, endianness: std.builtin.Endian) !Common {
+        pub fn parse(reader: *std.io.Reader, dib_header_type: DIBheaderType, endianness: std.builtin.Endian) !Common {
             return Common{
                 .dib_header_size = @intFromEnum(dib_header_type),
                 .width = try reader.takeInt(u32, endianness),
@@ -141,12 +141,12 @@ pub const DIB_header = union(DIB_header_type) {
         }
     };
     
-    pub fn parseDibHeader(reader: *std.io.Reader, dib_header_type: DIB_header_type, endianness: std.builtin.Endian) !DIB_header {
+    pub fn parseDibHeader(reader: *std.io.Reader, dib_header_type: DIBheaderType, endianness: std.builtin.Endian) !DIBheader {
         switch (dib_header_type) {
-            DIB_header_type.BITMAPCOREHEADER => return DIB_header{ .BITMAPCOREHEADER = DIB_header_BITMAPCOREHEADER{}},
-            DIB_header_type.BITMAPINFOHEADER => return parseBITMAPINFOHEADER(reader, endianness),
-            DIB_header_type.BITMAPV4HEADER => return parseBITMAPV4HEADER(reader, endianness),
-            DIB_header_type.BITMAPV5HEADER => return parseBITMAPV5HEADER(reader, endianness),
+            DIBheaderType.BITMAPCOREHEADER => return DIBheader{ .BITMAPCOREHEADER = DIBheader_BITMAPCOREHEADER{}},
+            DIBheaderType.BITMAPINFOHEADER => return parseBITMAPINFOHEADER(reader, endianness),
+            DIBheaderType.BITMAPV4HEADER => return parseBITMAPV4HEADER(reader, endianness),
+            DIBheaderType.BITMAPV5HEADER => return parseBITMAPV5HEADER(reader, endianness),
             else => {
                 std.debug.print("Header type {s} not implemented\n", .{@tagName(dib_header_type)});
                 return error.DIBHeaderTypeNotImplemented;
@@ -154,8 +154,8 @@ pub const DIB_header = union(DIB_header_type) {
         }
     }
     
-    fn parseBITMAPINFOHEADER(reader: *std.io.Reader, endianness: std.builtin.Endian) !DIB_header {
-        return DIB_header{ .BITMAPINFOHEADER = DIB_header_BITMAPINFOHEADER{
+    fn parseBITMAPINFOHEADER(reader: *std.io.Reader, endianness: std.builtin.Endian) !DIBheader {
+        return DIBheader{ .BITMAPINFOHEADER = DIBheader_BITMAPINFOHEADER{
             .compression_type = @enumFromInt(try reader.takeInt(u32, endianness)),
             .size_image = try reader.takeInt(u32, endianness),
             .xpelspermeter = try reader.takeInt(u32, endianness),
@@ -165,8 +165,8 @@ pub const DIB_header = union(DIB_header_type) {
         }};
     }
     
-    fn parseBITMAPV4HEADER(reader: *std.io.Reader, endianness: std.builtin.Endian) !DIB_header {
-        return DIB_header{ .BITMAPV4HEADER = DIB_header_BITMAPV4HEADER{
+    fn parseBITMAPV4HEADER(reader: *std.io.Reader, endianness: std.builtin.Endian) !DIBheader {
+        return DIBheader{ .BITMAPV4HEADER = DIBheader_BITMAPV4HEADER{
             .compression_type = @enumFromInt(try reader.takeInt(u32, endianness)),
             .size_image = try reader.takeInt(u32, endianness),
             .xpelspermeter = try reader.takeInt(u32, endianness),
@@ -201,8 +201,8 @@ pub const DIB_header = union(DIB_header_type) {
         }};
     }
     
-    fn parseBITMAPV5HEADER(reader: *std.io.Reader, endianness: std.builtin.Endian) !DIB_header {
-        return DIB_header{ .BITMAPV5HEADER = DIB_header_BITMAPV5HEADER{
+    fn parseBITMAPV5HEADER(reader: *std.io.Reader, endianness: std.builtin.Endian) !DIBheader {
+        return DIBheader{ .BITMAPV5HEADER = DIBheader_BITMAPV5HEADER{
             .compression_type = @enumFromInt(try reader.takeInt(u32, endianness)),
             .size_image = try reader.takeInt(u32, endianness),
             .xpelspermeter = try reader.takeInt(u32, endianness),

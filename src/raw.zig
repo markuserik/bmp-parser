@@ -4,17 +4,17 @@ const fs = std.fs;
 pub const Root = @import("bmp.zig");
 const endianness = Root.endianness;
 
-pub const File_header = @import("file_header.zig");
-pub const DIB_header = @import("dib_header.zig").DIB_header;
-pub const Extra_bit_masks = @import("extra_bitmasks.zig");
+pub const FileHeader = @import("file_header.zig");
+pub const DIBheader = @import("dib_header.zig").DIBheader;
+pub const ExtraBitmasks = @import("extra_bitmasks.zig");
 pub const Pixel = @import("pixels.zig");
 
 pub const Bmp = @This();
 
-file_header: File_header,
-dib_common: DIB_header.Common,
-dib_header: DIB_header,
-extra_bit_masks: ?Extra_bit_masks,
+file_header: FileHeader,
+dib_common: DIBheader.Common,
+dib_header: DIBheader,
+extra_bit_masks: ?ExtraBitmasks,
 pixels: [][]Pixel,
 arena: std.heap.ArenaAllocator,
 
@@ -46,22 +46,22 @@ pub fn parseRaw(raw_file: []u8) !Bmp {
 
     var reader: std.io.Reader = std.io.Reader.fixed(raw_file);
 
-    const file_header: File_header = try File_header.parseFileHeader(&reader, endianness);
+    const file_header: FileHeader = try FileHeader.parseFileHeader(&reader, endianness);
 
-    const dib_header_type: DIB_header.DIB_header_type = @enumFromInt(try reader.takeInt(u32, endianness));
-    const dib_common: DIB_header.Common = try DIB_header.Common.parse(&reader, dib_header_type, endianness);
-    const dib_header: DIB_header = try DIB_header.parseDibHeader(&reader, dib_header_type, endianness);
+    const dib_header_type: DIBheader.DIBheaderType = @enumFromInt(try reader.takeInt(u32, endianness));
+    const dib_common: DIBheader.Common = try DIBheader.Common.parse(&reader, dib_header_type, endianness);
+    const dib_header: DIBheader = try DIBheader.parseDibHeader(&reader, dib_header_type, endianness);
 
-    const extra_bit_masks: ?Extra_bit_masks = try getExtraBitMasks(&reader, dib_header);
+    const extra_bit_masks: ?ExtraBitmasks = try getExtraBitmasks(&reader, dib_header);
 
     var alpha_mask: u32 = 0;
-    var compression_type: ?DIB_header.DIB_compression_type = null;
+    var compression_type: ?DIBheader.DIBcompressionType = null;
     
     switch (dib_header) {
-        DIB_header.BITMAPCOREHEADER => {},
-        DIB_header.BITMAPINFOHEADER => |header| { compression_type = header.compression_type; },
-        DIB_header.BITMAPV4HEADER => |header| { alpha_mask = header.alpha_mask; compression_type = header.compression_type; },
-        DIB_header.BITMAPV5HEADER => |header| { alpha_mask = header.alpha_mask; compression_type = header.compression_type; },
+        DIBheader.BITMAPCOREHEADER => {},
+        DIBheader.BITMAPINFOHEADER => |header| { compression_type = header.compression_type; },
+        DIBheader.BITMAPV4HEADER => |header| { alpha_mask = header.alpha_mask; compression_type = header.compression_type; },
+        DIBheader.BITMAPV5HEADER => |header| { alpha_mask = header.alpha_mask; compression_type = header.compression_type; },
         else => unreachable
     }
 
@@ -87,22 +87,22 @@ pub fn parseRaw(raw_file: []u8) !Bmp {
     };
 }
 
-fn checkAlpha(compression_type: ?DIB_header.DIB_compression_type, bit_count: u16, alpha_mask: u32) bool {
+fn checkAlpha(compression_type: ?DIBheader.DIBcompressionType, bit_count: u16, alpha_mask: u32) bool {
     if (compression_type == null) return false;
     if (bit_count != 32) return false;
-    if (compression_type == DIB_header.DIB_compression_type.BI_RGB) return true;
+    if (compression_type == DIBheader.DIBcompressionType.BI_RGB) return true;
     if (alpha_mask != 0xFF000000) return false;
-    if (compression_type == DIB_header.DIB_compression_type.BI_BITFIELDS or compression_type == DIB_header.DIB_compression_type.BI_ALPHABITFIELDS) return true;
+    if (compression_type == DIBheader.DIBcompressionType.BI_BITFIELDS or compression_type == DIBheader.DIBcompressionType.BI_ALPHABITFIELDS) return true;
     return false;
 }
 
-fn getExtraBitMasks(reader: *std.io.Reader, dib_header: DIB_header) !?Extra_bit_masks {
-    if (dib_header == DIB_header.DIB_header_type.BITMAPINFOHEADER) {
-        if (dib_header.BITMAPINFOHEADER.compression_type == DIB_header.DIB_compression_type.BI_BITFIELDS) {
-            return try Extra_bit_masks.parseExtraBitMasks(reader, false, endianness);
+fn getExtraBitmasks(reader: *std.io.Reader, dib_header: DIBheader) !?ExtraBitmasks {
+    if (dib_header == DIBheader.DIBheaderType.BITMAPINFOHEADER) {
+        if (dib_header.BITMAPINFOHEADER.compression_type == DIBheader.DIBcompressionType.BI_BITFIELDS) {
+            return try ExtraBitmasks.parseExtraBitmasks(reader, false, endianness);
         }
-        else if (dib_header.BITMAPINFOHEADER.compression_type == DIB_header.DIB_compression_type.BI_ALPHABITFIELDS) {
-            return try Extra_bit_masks.parseExtraBitMasks(reader, true, endianness);
+        else if (dib_header.BITMAPINFOHEADER.compression_type == DIBheader.DIBcompressionType.BI_ALPHABITFIELDS) {
+            return try ExtraBitmasks.parseExtraBitmasks(reader, true, endianness);
         }
     }
     return null;
