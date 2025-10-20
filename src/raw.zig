@@ -43,6 +43,7 @@ pub fn parseFile(file: fs.File) !Bmp {
 pub fn parseRaw(raw_file: []u8) !Bmp {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     const allocator: std.mem.Allocator = arena.allocator();
+    errdefer arena.deinit();
 
     var reader: std.io.Reader = std.io.Reader.fixed(raw_file);
 
