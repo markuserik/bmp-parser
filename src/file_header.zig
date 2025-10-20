@@ -9,8 +9,8 @@ reserved2: [2]u8,
 offset: u32,
 
 pub fn parseFileHeader(reader: *std.io.Reader, endianness: std.builtin.Endian) !FileHeader {
-    // Discard identifier
-    _ = try reader.take(2);
+    const identifier: [2]u8 = (try reader.takeArray(2)).*;
+    if (!std.mem.eql(u8, &identifier, "BM")) return error.Corrupt_IncorrectIdentifier;
 
     return FileHeader{
         .file_size = try reader.takeInt(u32, endianness),
