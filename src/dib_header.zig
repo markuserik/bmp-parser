@@ -84,7 +84,6 @@ pub const DIBheader = struct {
 
     pub fn parseDibHeader(reader: *std.io.Reader, allocator: std.mem.Allocator, endianness: std.builtin.Endian) !DIBheader {
         const header: *DIBheader = try allocator.create(DIBheader);
-        errdefer allocator.destroy(header);
         header.type = @enumFromInt(try reader.takeInt(u32, endianness));
         
         try parseCommon(reader, header, endianness);
