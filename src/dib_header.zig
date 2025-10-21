@@ -1,73 +1,32 @@
 const std = @import("std");
 const fs = std.fs;
 
-pub const DIBheader = union(DIBheaderType) {
-    BITMAPCOREHEADER: DIBheader_BITMAPCOREHEADER,
-    OS22XBITMAPHEADER_16: DIBheader_OS22XBITMAPHEADER_16,
-    BITMAPINFOHEADER: DIBheader_BITMAPINFOHEADER,
-    BITMAPV2INFOHEADER: DIBheader_BITMAPV2INFOHEADER,
-    BITMAPV3INFOHEADER: DIBheader_BITMAPV3INFOHEADER,
-    OS22XBITMAPHEADER_64: DIBheader_OS22XBITMAPHEADER_64,
-    BITMAPV4HEADER: DIBheader_BITMAPV4HEADER,
-    BITMAPV5HEADER: DIBheader_BITMAPV5HEADER,
+pub const DIBheader = struct {
+    type: DIBheaderType,
+    width: u32,
+    height: u32,
+    planes: u16,
+    bit_count: u16,
+    compression_type: ?DIBcompressionType,
+    size_image: ?u32,
+    xpelspermeter: ?u32,
+    ypelspermeter: ?u32,
+    clrused: ?u32,
+    clrimportant: ?u32,
+    redmask: ?u32,
+    greenmask: ?u32,
+    bluemask: ?u32,
+    alpha_mask: ?u32,
+    cs_type: ?CS_type,
+    endpoints: ?ciexyztriple,
+    gamma_red: ?u32,
+    gamma_green: ?u32,
+    gamma_blue: ?u32,
+    rendering_intent: ?Rendering_intent,
+    profile_data: ?u32,
+    profile_size: ?u32,
+    reserved: ?u32,
 
-    pub const DIBheader_BITMAPCOREHEADER = struct {
-    };
-    pub const DIBheader_OS22XBITMAPHEADER_16 = struct {
-    };
-    pub const DIBheader_BITMAPINFOHEADER = struct {
-        compression_type: DIBcompressionType,
-        size_image: u32,
-        xpelspermeter: u32,
-        ypelspermeter: u32,
-        clrused: u32,
-        clrimportant: u32
-    };
-    pub const DIBheader_BITMAPV2INFOHEADER = struct {
-    };
-    pub const DIBheader_BITMAPV3INFOHEADER = struct {
-    };
-    pub const DIBheader_OS22XBITMAPHEADER_64 = struct {
-    };
-    pub const DIBheader_BITMAPV4HEADER = struct {
-        compression_type: DIBcompressionType,
-        size_image: u32,
-        xpelspermeter: u32,
-        ypelspermeter: u32,
-        clrused: u32,
-        clrimportant: u32,
-        redmask: u32,
-        greenmask: u32,
-        bluemask: u32,
-        alpha_mask: u32,
-        cs_type: CS_type,
-        endpoints: ciexyztriple,
-        gamma_red: u32,
-        gamma_green: u32,
-        gamma_blue: u32
-    };
-    pub const DIBheader_BITMAPV5HEADER = struct {
-        compression_type: DIBcompressionType,
-        size_image: u32,
-        xpelspermeter: u32,
-        ypelspermeter: u32,
-        clrused: u32,
-        clrimportant: u32,
-        redmask: u32,
-        greenmask: u32,
-        bluemask: u32,
-        alpha_mask: u32,
-        cs_type: CS_type,
-        endpoints: ciexyztriple,
-        gamma_red: u32,
-        gamma_green: u32,
-        gamma_blue: u32,
-        rendering_intent: Rendering_intent,
-        profile_data: u32,
-        profile_size: u32,
-        reserved: u32
-    };
-    
     // Only implementing the types recognized by microsoft (core, info, v4, v5), at
     // least for now.
     // Will leave the rest in the enum so that they can be recognized despite not
@@ -123,121 +82,111 @@ pub const DIBheader = union(DIBheaderType) {
         LCS_GM_IMAGES = 4
     };
 
-    pub const Common = struct {
-        dib_header_size: u32,
-        width: u32,
-        height: u32,
-        planes: u16,
-        bit_count: u16,
+    pub fn parseDibHeader(reader: *std.io.Reader, allocator: std.mem.Allocator, endianness: std.builtin.Endian) !DIBheader {
+        const header: *DIBheader = try allocator.create(DIBheader);
+        errdefer allocator.destroy(header);
+        header.type = @enumFromInt(try reader.takeInt(u32, endianness));
         
-        pub fn parse(reader: *std.io.Reader, dib_header_type: DIBheaderType, endianness: std.builtin.Endian) !Common {
-            return Common{
-                .dib_header_size = @intFromEnum(dib_header_type),
-                .width = try reader.takeInt(u32, endianness),
-                .height = try reader.takeInt(u32, endianness),
-                .planes = try reader.takeInt(u16, endianness),
-                .bit_count = try reader.takeInt(u16, endianness)
-            };
-        }
-    };
-    
-    pub fn parseDibHeader(reader: *std.io.Reader, dib_header_type: DIBheaderType, endianness: std.builtin.Endian) !DIBheader {
-        switch (dib_header_type) {
-            DIBheaderType.BITMAPCOREHEADER => return DIBheader{ .BITMAPCOREHEADER = DIBheader_BITMAPCOREHEADER{}},
-            DIBheaderType.BITMAPINFOHEADER => return parseBITMAPINFOHEADER(reader, endianness),
-            DIBheaderType.BITMAPV4HEADER => return parseBITMAPV4HEADER(reader, endianness),
-            DIBheaderType.BITMAPV5HEADER => return parseBITMAPV5HEADER(reader, endianness),
+        try parseCommon(reader, header, endianness);
+
+        switch (header.type) {
+            .BITMAPCOREHEADER => {},
+            .BITMAPINFOHEADER => try parseBITMAPINFOHEADER(reader, header, endianness),
+            .BITMAPV4HEADER => try parseBITMAPV4HEADER(reader, header, endianness),
+            .BITMAPV5HEADER => try parseBITMAPV5HEADER(reader, header, endianness),
             else => {
-                std.debug.print("Header type {s} not implemented\n", .{@tagName(dib_header_type)});
+                std.debug.print("Header type {s} not implemented\n", .{@tagName(header.type)});
                 return error.DIBHeaderTypeNotImplemented;
             }
         }
+        return header.*;
+    }
+
+    pub fn parseCommon(reader: *std.io.Reader, header: *DIBheader, endianness: std.builtin.Endian) !void {
+        header.width = try reader.takeInt(u32, endianness);
+        header.height = try reader.takeInt(u32, endianness);
+        header.planes = try reader.takeInt(u16, endianness);
+        header.bit_count = try reader.takeInt(u16, endianness);
     }
     
-    fn parseBITMAPINFOHEADER(reader: *std.io.Reader, endianness: std.builtin.Endian) !DIBheader {
-        return DIBheader{ .BITMAPINFOHEADER = DIBheader_BITMAPINFOHEADER{
-            .compression_type = @enumFromInt(try reader.takeInt(u32, endianness)),
-            .size_image = try reader.takeInt(u32, endianness),
-            .xpelspermeter = try reader.takeInt(u32, endianness),
-            .ypelspermeter = try reader.takeInt(u32, endianness),
-            .clrused = try reader.takeInt(u32, endianness),
-            .clrimportant = try reader.takeInt(u32, endianness)
-        }};
+    fn parseBITMAPINFOHEADER(reader: *std.io.Reader, header: *DIBheader, endianness: std.builtin.Endian) !void {
+        header.compression_type = @enumFromInt(try reader.takeInt(u32, endianness));
+        header.size_image = try reader.takeInt(u32, endianness);
+        header.xpelspermeter = try reader.takeInt(u32, endianness);
+        header.ypelspermeter = try reader.takeInt(u32, endianness);
+        header.clrused = try reader.takeInt(u32, endianness);
+        header.clrimportant = try reader.takeInt(u32, endianness);
     }
     
-    fn parseBITMAPV4HEADER(reader: *std.io.Reader, endianness: std.builtin.Endian) !DIBheader {
-        return DIBheader{ .BITMAPV4HEADER = DIBheader_BITMAPV4HEADER{
-            .compression_type = @enumFromInt(try reader.takeInt(u32, endianness)),
-            .size_image = try reader.takeInt(u32, endianness),
-            .xpelspermeter = try reader.takeInt(u32, endianness),
-            .ypelspermeter = try reader.takeInt(u32, endianness),
-            .clrused = try reader.takeInt(u32, endianness),
-            .clrimportant = try reader.takeInt(u32, endianness),
-            .redmask = try reader.takeInt(u32, endianness),
-            .greenmask = try reader.takeInt(u32, endianness),
-            .bluemask = try reader.takeInt(u32, endianness),
-            .alpha_mask = try reader.takeInt(u32, endianness),
-            .cs_type = @enumFromInt(try reader.takeInt(u32, endianness)),
-            .endpoints = .{
-                .red = .{
-                    .x = try reader.takeInt(u32, endianness),
-                    .y = try reader.takeInt(u32, endianness),
-                    .z = try reader.takeInt(u32, endianness)
-                },
-                .green = .{
-                    .x = try reader.takeInt(u32, endianness),
-                    .y = try reader.takeInt(u32, endianness),
-                    .z = try reader.takeInt(u32, endianness)
-                },
-                .blue = .{
-                    .x = try reader.takeInt(u32, endianness),
-                    .y = try reader.takeInt(u32, endianness),
-                    .z = try reader.takeInt(u32, endianness)
-                }
-            },
-            .gamma_red = try reader.takeInt(u32, endianness),
-            .gamma_green = try reader.takeInt(u32, endianness),
-            .gamma_blue = try reader.takeInt(u32, endianness),
-        }};
+    fn parseBITMAPV4HEADER(reader: *std.io.Reader, header: *DIBheader, endianness: std.builtin.Endian) !void {
+        header.compression_type = @enumFromInt(try reader.takeInt(u32, endianness));
+        header.size_image = try reader.takeInt(u32, endianness);
+        header.xpelspermeter = try reader.takeInt(u32, endianness);
+        header.ypelspermeter = try reader.takeInt(u32, endianness);
+        header.clrused = try reader.takeInt(u32, endianness);
+        header.clrimportant = try reader.takeInt(u32, endianness);
+        header.redmask = try reader.takeInt(u32, endianness);
+        header.greenmask = try reader.takeInt(u32, endianness);
+        header.bluemask = try reader.takeInt(u32, endianness);
+        header.alpha_mask = try reader.takeInt(u32, endianness);
+        header.cs_type = @enumFromInt(try reader.takeInt(u32, endianness));
+        header.endpoints = .{
+           .red = .{
+               .x = try reader.takeInt(u32, endianness),
+               .y = try reader.takeInt(u32, endianness),
+               .z = try reader.takeInt(u32, endianness)
+           },
+           .green = .{
+               .x = try reader.takeInt(u32, endianness),
+               .y = try reader.takeInt(u32, endianness),
+               .z = try reader.takeInt(u32, endianness)
+           },
+           .blue = .{
+               .x = try reader.takeInt(u32, endianness),
+               .y = try reader.takeInt(u32, endianness),
+               .z = try reader.takeInt(u32, endianness)
+           }
+        };
+        header.gamma_red = try reader.takeInt(u32, endianness);
+        header.gamma_green = try reader.takeInt(u32, endianness);
+        header.gamma_blue = try reader.takeInt(u32, endianness);
     }
     
-    fn parseBITMAPV5HEADER(reader: *std.io.Reader, endianness: std.builtin.Endian) !DIBheader {
-        return DIBheader{ .BITMAPV5HEADER = DIBheader_BITMAPV5HEADER{
-            .compression_type = @enumFromInt(try reader.takeInt(u32, endianness)),
-            .size_image = try reader.takeInt(u32, endianness),
-            .xpelspermeter = try reader.takeInt(u32, endianness),
-            .ypelspermeter = try reader.takeInt(u32, endianness),
-            .clrused = try reader.takeInt(u32, endianness),
-            .clrimportant = try reader.takeInt(u32, endianness),
-            .redmask = try reader.takeInt(u32, endianness),
-            .greenmask = try reader.takeInt(u32, endianness),
-            .bluemask = try reader.takeInt(u32, endianness),
-            .alpha_mask = try reader.takeInt(u32, endianness),
-            .cs_type = @enumFromInt(try reader.takeInt(u32, endianness)),
-            .endpoints = .{
-                .red = .{
-                    .x = try reader.takeInt(u32, endianness),
-                    .y = try reader.takeInt(u32, endianness),
-                    .z = try reader.takeInt(u32, endianness)
-                },
-                .green = .{
-                    .x = try reader.takeInt(u32, endianness),
-                    .y = try reader.takeInt(u32, endianness),
-                    .z = try reader.takeInt(u32, endianness)
-                },
-                .blue = .{
-                    .x = try reader.takeInt(u32, endianness),
-                    .y = try reader.takeInt(u32, endianness),
-                    .z = try reader.takeInt(u32, endianness)
-                }
-            },
-            .gamma_red = try reader.takeInt(u32, endianness),
-            .gamma_green = try reader.takeInt(u32, endianness),
-            .gamma_blue = try reader.takeInt(u32, endianness),
-            .rendering_intent = @enumFromInt(try reader.takeInt(u32, endianness)),
-            .profile_data = try reader.takeInt(u32, endianness),
-            .profile_size = try reader.takeInt(u32, endianness),
-            .reserved = try reader.takeInt(u32, endianness)
-        }};
+    fn parseBITMAPV5HEADER(reader: *std.io.Reader, header: *DIBheader, endianness: std.builtin.Endian) !void {
+        header.compression_type = @enumFromInt(try reader.takeInt(u32, endianness));
+        header.size_image = try reader.takeInt(u32, endianness);
+        header.xpelspermeter = try reader.takeInt(u32, endianness);
+        header.ypelspermeter = try reader.takeInt(u32, endianness);
+        header.clrused = try reader.takeInt(u32, endianness);
+        header.clrimportant = try reader.takeInt(u32, endianness);
+        header.redmask = try reader.takeInt(u32, endianness);
+        header.greenmask = try reader.takeInt(u32, endianness);
+        header.bluemask = try reader.takeInt(u32, endianness);
+        header.alpha_mask = try reader.takeInt(u32, endianness);
+        header.cs_type = @enumFromInt(try reader.takeInt(u32, endianness));
+        header.endpoints = .{
+           .red = .{
+               .x = try reader.takeInt(u32, endianness),
+               .y = try reader.takeInt(u32, endianness),
+               .z = try reader.takeInt(u32, endianness)
+           },
+           .green = .{
+               .x = try reader.takeInt(u32, endianness),
+               .y = try reader.takeInt(u32, endianness),
+               .z = try reader.takeInt(u32, endianness)
+           },
+           .blue = .{
+               .x = try reader.takeInt(u32, endianness),
+               .y = try reader.takeInt(u32, endianness),
+               .z = try reader.takeInt(u32, endianness)
+           }
+        };
+        header.gamma_red = try reader.takeInt(u32, endianness);
+        header.gamma_green = try reader.takeInt(u32, endianness);
+        header.gamma_blue = try reader.takeInt(u32, endianness);
+        header.rendering_intent = @enumFromInt(try reader.takeInt(u32, endianness));
+        header.profile_data = try reader.takeInt(u32, endianness);
+        header.profile_size = try reader.takeInt(u32, endianness);
+        header.reserved = try reader.takeInt(u32, endianness);
     }
 };

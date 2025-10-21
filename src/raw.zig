@@ -12,7 +12,6 @@ pub const Pixel = @import("pixels.zig");
 pub const Bmp = @This();
 
 file_header: FileHeader,
-dib_common: DIBheader.Common,
 dib_header: DIBheader,
 extra_bit_masks: ?ExtraBitmasks,
 pixels: [][]Pixel,
@@ -49,38 +48,24 @@ pub fn parseRaw(raw_file: []u8) !Bmp {
 
     const file_header: FileHeader = try FileHeader.parseFileHeader(&reader, endianness);
 
-    const dib_header_type: DIBheader.DIBheaderType = @enumFromInt(try reader.takeInt(u32, endianness));
-    const dib_common: DIBheader.Common = try DIBheader.Common.parse(&reader, dib_header_type, endianness);
-    const dib_header: DIBheader = try DIBheader.parseDibHeader(&reader, dib_header_type, endianness);
+    const dib_header: DIBheader = try DIBheader.parseDibHeader(&reader, allocator, endianness);
 
     const extra_bit_masks: ?ExtraBitmasks = try getExtraBitmasks(&reader, dib_header);
 
-    var alpha_mask: u32 = 0;
-    var compression_type: ?DIBheader.DIBcompressionType = null;
-    
-    switch (dib_header) {
-        DIBheader.BITMAPCOREHEADER => {},
-        DIBheader.BITMAPINFOHEADER => |header| { compression_type = header.compression_type; },
-        DIBheader.BITMAPV4HEADER => |header| { alpha_mask = header.alpha_mask; compression_type = header.compression_type; },
-        DIBheader.BITMAPV5HEADER => |header| { alpha_mask = header.alpha_mask; compression_type = header.compression_type; },
-        else => return error.DIBHeaderTypeNotImplemented
-    }
-
-    if (dib_common.bit_count <= 8) {
+    if (dib_header.bit_count <= 8) {
         std.debug.print("Color table not implemented, bit counts of 8 or lower not supported\n", .{});
         return error.ColorTableNotImplemented;
     }
 
-    const gap1: u32 = file_header.offset - (14 + @intFromEnum(dib_header_type));
+    const gap1: u32 = file_header.offset - (14 + @intFromEnum(dib_header.type));
     _ = try reader.take(gap1);
     
-    const has_alpha: bool = checkAlpha(compression_type, dib_common.bit_count, alpha_mask);
+    const has_alpha: bool = checkAlpha(dib_header.compression_type, dib_header.bit_count, dib_header.alpha_mask);
     
-    const pixels: [][]Pixel = try Pixel.parsePixels(&reader, dib_common.height, dib_common.width, dib_common.bit_count, has_alpha, allocator);
+    const pixels: [][]Pixel = try Pixel.parsePixels(&reader, dib_header.height, dib_header.width, dib_header.bit_count, has_alpha, allocator);
 
     return Bmp{
         .file_header = file_header,
-        .dib_common = dib_common,
         .dib_header = dib_header,
         .extra_bit_masks = extra_bit_masks,
         .pixels = pixels,
@@ -88,21 +73,21 @@ pub fn parseRaw(raw_file: []u8) !Bmp {
     };
 }
 
-fn checkAlpha(compression_type: ?DIBheader.DIBcompressionType, bit_count: u16, alpha_mask: u32) bool {
+fn checkAlpha(compression_type: ?DIBheader.DIBcompressionType, bit_count: u16, alpha_mask: ?u32) bool {
     if (compression_type == null) return false;
     if (bit_count != 32) return false;
-    if (compression_type == DIBheader.DIBcompressionType.BI_RGB) return true;
+    if (compression_type == .BI_RGB) return true;
     if (alpha_mask != 0xFF000000) return false;
-    if (compression_type == DIBheader.DIBcompressionType.BI_BITFIELDS or compression_type == DIBheader.DIBcompressionType.BI_ALPHABITFIELDS) return true;
+    if (compression_type == .BI_BITFIELDS or compression_type == .BI_ALPHABITFIELDS) return true;
     return false;
 }
 
 fn getExtraBitmasks(reader: *std.io.Reader, dib_header: DIBheader) !?ExtraBitmasks {
-    if (dib_header == DIBheader.DIBheaderType.BITMAPINFOHEADER) {
-        if (dib_header.BITMAPINFOHEADER.compression_type == DIBheader.DIBcompressionType.BI_BITFIELDS) {
+    if (dib_header.type == .BITMAPINFOHEADER) {
+        if (dib_header.compression_type.? == .BI_BITFIELDS) {
             return try ExtraBitmasks.parseExtraBitmasks(reader, false, endianness);
         }
-        else if (dib_header.BITMAPINFOHEADER.compression_type == DIBheader.DIBcompressionType.BI_ALPHABITFIELDS) {
+        else if (dib_header.compression_type.? == .BI_ALPHABITFIELDS) {
             return try ExtraBitmasks.parseExtraBitmasks(reader, true, endianness);
         }
     }

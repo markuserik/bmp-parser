@@ -51,6 +51,6 @@ pub fn main() !void {
     const bmp: bmp_parser.Bmp = try bmp_parser.parseFileFromPath("images/test.bmp");
     defer bmp.deinit();
 
-    std.debug.print("Height: {}, Width: {}\n", .{bmp.dib_common.height, bmp.dib_common.width});
+    std.debug.print("Height: {}, Width: {}\n", .{bmp.dib_header.height, bmp.dib_header.width});
 }
 ```
