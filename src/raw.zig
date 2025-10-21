@@ -50,7 +50,7 @@ pub fn parseRaw(raw_file: []u8) !Bmp {
 
     const dib_header: DIBheader = try DIBheader.parseDibHeader(&reader, allocator, endianness);
 
-    const extra_bit_masks: ?ExtraBitmasks = try getExtraBitmasks(&reader, dib_header);
+    const extra_bit_masks: ?ExtraBitmasks = try ExtraBitmasks.parseExtraBitmasks(&reader, dib_header, endianness);
 
     if (dib_header.bit_count <= 8) {
         std.debug.print("Color table not implemented, bit counts of 8 or lower not supported\n", .{});
@@ -80,16 +80,4 @@ fn checkAlpha(compression_type: ?DIBheader.DIBcompressionType, bit_count: u16, a
     if (alpha_mask != 0xFF000000) return false;
     if (compression_type == .BI_BITFIELDS or compression_type == .BI_ALPHABITFIELDS) return true;
     return false;
-}
-
-fn getExtraBitmasks(reader: *std.io.Reader, dib_header: DIBheader) !?ExtraBitmasks {
-    if (dib_header.type == .BITMAPINFOHEADER) {
-        if (dib_header.compression_type.? == .BI_BITFIELDS) {
-            return try ExtraBitmasks.parseExtraBitmasks(reader, false, endianness);
-        }
-        else if (dib_header.compression_type.? == .BI_ALPHABITFIELDS) {
-            return try ExtraBitmasks.parseExtraBitmasks(reader, true, endianness);
-        }
-    }
-    return null;
 }
